@@ -28,6 +28,26 @@ small{color:#667}
 .danger{background:#ad3434}
 </style>
 </head>
+
+  
+<script>
+function verifierStockV7() {
+  const produits = JSON.parse(
+    localStorage.getItem("produits") || "[]"
+  );
+
+  const faibles = produits.filter(p =>
+    Number(p.stock ?? p.quantite ?? 0) <= 5
+  );
+
+  alert(
+    faibles.length
+      ? "Produits à vérifier : " + faibles.length
+      : "Aucun stock faible détecté"
+  );
+}
+</script>
+
 <body>
 <header>
 <h1>ShopPilot V6</h1>
