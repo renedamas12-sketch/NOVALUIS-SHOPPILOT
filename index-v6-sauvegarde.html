@@ -1,0 +1,350 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ShopPilot V6</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f6fb;color:#17243a;font-family:Arial,sans-serif}
+header{background:#123b86;color:white;padding:22px 16px}
+header h1{margin:0}
+main{max-width:950px;margin:auto;padding:16px}
+nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+button{background:#123b86;color:white;border:0;border-radius:8px;padding:11px;cursor:pointer}
+nav button{flex:1}
+.panel,.card{background:white;padding:16px;border-radius:12px;margin-bottom:14px;box-shadow:0 2px 8px #0000000b}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card strong{font-size:22px;color:#123b86;overflow-wrap:anywhere}
+input,select{width:100%;padding:11px;margin:6px 0 12px;border:1px solid #ccd5e3;border-radius:7px}
+label{font-weight:bold}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:9px;border-bottom:1px solid #ddd;text-align:left}
+.scroll{overflow-x:auto}
+section{display:none}
+section.active{display:block}
+small{color:#667}
+.danger{background:#ad3434}
+</style>
+</head>
+<body>
+<header>
+<h1>ShopPilot V6</h1>
+<p>Gestion intelligente de votre boutique</p>
+</header>
+<main>
+<nav>
+<button onclick="show('dashboard')">Accueil</button>
+<button onclick="show('produits')">Produits</button>
+<button onclick="show('clients')">Clients</button>
+<button onclick="show('commandes')">Commandes</button>
+<button onclick="show('ventes')">Ventes</button>
+<button onclick="show('rapports')">Rapports</button>
+<button onclick="show('sauvegarde')">Sauvegarde</button>
+</nav>
+
+<section id="dashboard" class="active">
+<h2>Tableau de bord</h2>
+<div class="cards" id="stats"></div>
+<div class="panel">
+<h3>Statistiques</h3>
+<div id="statistiques"></div>
+</div>
+</section>
+
+<section id="produits">
+<h2>Gestion des produits</h2>
+<div class="panel">
+<label>Nom du produit</label>
+<input id="nomProduit" placeholder="Ex : Ordinateur HP">
+<label>Prix d'achat</label>
+<input id="achat" type="number" min="0" step="0.01">
+<label>Prix de vente</label>
+<input id="prix" type="number" min="0" step="0.01">
+<label>Quantité en stock</label>
+<input id="stock" type="number" min="0" step="1">
+<button onclick="ajouterProduit()">Ajouter le produit</button>
+</div>
+<div class="panel scroll" id="listeProduits"></div>
+</section>
+
+<section id="clients">
+<h2>Clients</h2>
+<div class="panel">
+<input id="nomClient" placeholder="Nom du client">
+<input id="telephone" placeholder="Téléphone">
+<input id="email" placeholder="Email">
+<input id="adresse" placeholder="Adresse">
+<button onclick="ajouterClient()">Ajouter un client</button>
+</div>
+<div class="panel scroll" id="listeClients"></div>
+</section>
+
+<section id="commandes">
+<h2>Commandes</h2>
+<div class="panel">
+<label>Client</label><select id="clientCommande"></select>
+<label>Produit</label><select id="produitCommande"></select>
+<label>Quantité</label>
+<input id="qteCommande" type="number" min="1" value="1">
+<button onclick="creerCommande()">Créer une commande</button>
+</div>
+<div class="panel scroll" id="listeCommandes"></div>
+</section>
+
+<section id="ventes">
+<h2>Ventes et reçus</h2>
+<div class="panel">
+<h3>Vente directe</h3>
+<select id="produitVente"></select>
+<input id="qteVente" type="number" min="1" value="1">
+<input id="clientVente" placeholder="Nom du client (facultatif)">
+<select id="paiementVente">
+<option>Espèces</option><option>Carte bancaire</option>
+<option>Virement</option><option>Mobile Money</option>
+</select>
+<button onclick="venteDirecte()">Enregistrer la vente</button>
+</div>
+<div class="panel scroll" id="listeVentes"></div>
+</section>
+
+<section id="rapports">
+<h2>Rapports commerciaux</h2>
+<div class="panel" id="rapport"></div>
+<button onclick="exportCSV()">Exporter les ventes CSV</button>
+<button onclick="window.print()">Imprimer le rapport</button>
+</section>
+
+<section id="sauvegarde">
+<h2>Sauvegarde et restauration</h2>
+<div class="panel">
+<p>Enregistrez régulièrement vos données.</p>
+<button onclick="sauvegarder()">Télécharger une sauvegarde JSON</button>
+<h3>Restaurer une sauvegarde V5 ou V6</h3>
+<input type="file" id="fichier" accept=".json,application/json">
+<button onclick="restaurer()">Restaurer les données</button>
+<p><small>La restauration remplace les données actuelles après confirmation.</small></p>
+</div>
+</section>
+</main>
+<script>
+const keys={
+produits:"shoppilot_produits_v1",
+clients:"shoppilot_clients_v1",
+commandes:"shoppilot_commandes_v1",
+ventes:"shoppilot_ventes_v1"
+};
+const get=k=>{
+try{return JSON.parse(localStorage.getItem(keys[k])||"[]")||[]}
+catch{return []}
+};
+const save=(k,v)=>localStorage.setItem(keys[k],JSON.stringify(v));
+const uid=()=>Date.now()+"-"+Math.random().toString(36).slice(2);
+const money=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(Number(n)||0);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const el=id=>document.getElementById(id);
+function show(id){
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+el(id).classList.add("active");render();
+}
+function table(headers,rows){
+return "<table><tr>"+headers.map(x=>"<th>"+x+"</th>").join("")+"</tr>"+
+rows.map(r=>"<tr>"+r.map(x=>"<td>"+x+"</td>").join("")+"</tr>").join("")+"</table>";
+}
+function ajouterProduit(){
+let nom=el("nomProduit").value.trim(),prix=+el("prix").value,achat=+el("achat").value,stock=+el("stock").value;
+if(!nom||prix<0||achat<0||!Number.isInteger(stock)||stock<0||!el("prix").value||!el("stock").value){alert("Vérifiez les informations");return}
+let p=get("produits");
+p.push({id:uid(),nom,prix,achat,stock});
+save("produits",p);render();alert("Produit ajouté");
+}
+function ajouterClient(){
+let nom=el("nomClient").value.trim();
+if(!nom){alert("Indiquez le nom");return}
+let c=get("clients");
+c.push({id:uid(),nom,telephone:el("telephone").value,email:el("email").value,adresse:el("adresse").value});
+save("clients",c);render();alert("Client ajouté");
+}
+function options(id,items){
+let old=el(id).value;
+el(id).innerHTML=items.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nom)+'</option>').join("");
+if(items.some(x=>x.id===old))el(id).value=old;
+}
+function creerCommande(){
+let p=get("produits").find(x=>x.id===el("produitCommande").value);
+let c=get("clients").find(x=>x.id===el("clientCommande").value);
+let q=+el("qteCommande").value;
+if(!p||!c||!Number.isInteger(q)||q<1||q>p.stock){alert("Vérifiez le client, le produit et le stock");return}
+let commandes=get("commandes");
+commandes.push({id:uid(),clientId:c.id,client:c.nom,produitId:p.id,produit:p.nom,quantite:q,prix:p.prix,total:q*p.prix,statut:"En attente",date:new Date().toISOString()});
+save("commandes",commandes);render();alert("Commande créée");
+}
+function changerCommande(id,action){
+let commandes=get("commandes"),c=commandes.find(x=>x.id===id);
+if(!c||c.statut!=="En attente")return;
+if(action==="Annulée"){c.statut="Annulée";save("commandes",commandes);render();return}
+let produits=get("produits"),p=produits.find(x=>x.id===c.produitId);
+if(!p||p.stock<c.quantite){alert("Stock insuffisant");return}
+let paiement=prompt("Mode de paiement : Espèces, Carte bancaire, Virement ou Mobile Money","Espèces");
+if(paiement===null)return;
+p.stock-=c.quantite;
+c.statut="Payée";c.paiement=paiement;c.datePaiement=new Date().toISOString();
+let ventes=get("ventes");
+ventes.push({id:uid(),commandeId:c.id,produitId:p.id,produit:p.nom,quantite:c.quantite,prix:c.prix,total:c.total,achatUnitaire:Number(p.achat)||0,coutConnu:p.achat!==undefined,date:c.datePaiement,paiement,devise:"EUR",client:c.client,source:"Commande"});
+save("produits",produits);save("commandes",commandes);save("ventes",ventes);render();
+}
+function venteDirecte(){
+let produits=get("produits"),p=produits.find(x=>x.id===el("produitVente").value);
+let q=+el("qteVente").value;
+if(!p||!Number.isInteger(q)||q<1||q>p.stock){alert("Stock insuffisant ou quantité incorrecte");return}
+p.stock-=q;
+let ventes=get("ventes");
+ventes.push({id:uid(),produitId:p.id,produit:p.nom,quantite:q,prix:p.prix,total:p.prix*q,achatUnitaire:Number(p.achat)||0,coutConnu:p.achat!==undefined,date:new Date().toISOString(),paiement:el("paiementVente").value,devise:"EUR",client:el("clientVente").value,source:"Directe"});
+save("produits",produits);save("ventes",ventes);render();alert("Vente enregistrée");
+}
+function recu(id){
+let v=get("ventes").find(x=>x.id===id);
+if(!v)return;
+let w=window.open("","_blank");
+if(!w){alert("Autorisez les fenêtres pop-up");return}
+w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reçu ShopPilot</title></head><body style="font-family:Arial;padding:25px"><h1>ShopPilot - Reçu</h1><p>Date : '+esc(new Date(v.date).toLocaleString("fr-FR"))+'</p><p>Client : '+esc(v.client||"Non renseigné")+'</p><p>Produit : '+esc(v.produit)+'</p><p>Quantité : '+esc(v.quantite)+'</p><h2>Total : '+money(v.total)+'</h2><p>Paiement : '+esc(v.paiement)+'</p><button onclick="print()">Imprimer / PDF</button></body></html>');
+w.document.close();
+}
+function calcul(){
+let ventes=get("ventes"),produits=get("produits");
+let ca=ventes.reduce((s,v)=>s+(+v.total||0),0);
+let benef=0,connues=0;
+ventes.forEach(v=>{
+let p=produits.find(x=>x.id===(v.produitId||"")||x.nom===v.produit);
+let achat=v.coutConnu?+v.achatUnitaire:(p&&p.achat!==undefined?+p.achat:null);
+if(achat!==null&&Number.isFinite(achat)){benef+=(+v.total||0)-achat*(+v.quantite||0);connues++}
+});
+return {ca,benef,connues,ventes:ventes.length};
+}
+function render(){
+let p=get("produits"),c=get("clients"),co=get("commandes"),v=get("ventes"),s=calcul();
+let stock=p.reduce((a,x)=>a+(+x.stock||0),0);
+el("stats").innerHTML=[
+["Chiffre d'affaires",money(s.ca)],
+["Ventes",s.ventes],
+["Produits en stock",stock],
+["Clients",c.length],
+["Bénéfice calculable",money(s.benef)],
+["Commandes payées",co.filter(x=>x.statut==="Payée").length]
+].map(x=>'<div class="card">'+esc(x[0])+'<p><strong>'+x[1]+'</strong></p></div>').join("");
+el("statistiques").textContent=s.connues+" vente(s) avec coût d'achat connu sur "+s.ventes+". Les autres bénéfices ne sont pas encore calculables.";
+el("listeProduits").innerHTML=table(["Produit","Achat","Vente","Stock","Marge/unité"],p.map(x=>[esc(x.nom),x.achat===undefined?"À saisir":money(x.achat),money(x.prix),esc(x.stock),x.achat===undefined?"Inconnue":money(x.prix-x.achat)]));
+el("listeClients").innerHTML=table(["Nom","Téléphone","Adresse"],c.map(x=>[esc(x.nom),esc(x.telephone),esc(x.adresse)]));
+options("produitCommande",p);options("produitVente",p);options("clientCommande",c);
+el("listeCommandes").innerHTML=table(["Client","Produit","Total","Statut","Action"],co.map(x=>[
+esc(x.client),esc(x.produit),money(x.total),esc(x.statut),
+x.statut==="En attente"?'<button onclick="changerCommande(\''+x.id+'\',\'Payée\')">Payer</button> <button class="danger" onclick="changerCommande(\''+x.id+'\',\'Annulée\')">Annuler</button>':"—"
+]));
+el("listeVentes").innerHTML=table(["Date","Client","Produit","Total","Reçu"],v.map(x=>[
+esc(new Date(x.date).toLocaleDateString("fr-FR")),esc(x.client),esc(x.produit),money(x.total),'<button onclick="recu(\''+x.id+'\')">Reçu</button>'
+]));
+el("rapport").innerHTML="<h3>Rapport des ventes</h3><p>Chiffre d'affaires : "+money(s.ca)+"</p><p>Nombre de ventes : "+s.ventes+"</p><p>Bénéfice des ventes avec coûts connus : "+money(s.benef)+"</p><p>Coûts connus pour "+s.connues+" vente(s) sur "+s.ventes+".</p><p><small>Bénéfice brut estimé, hors frais, taxes et charges.</small></p>";
+}
+function download(name,content,type){
+let a=document.createElement("a"),url=URL.createObjectURL(new Blob([content],{type}));
+a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function sauvegarder(){
+let data={};
+Object.keys(localStorage).filter(k=>k.startsWith("shoppilot_")).forEach(k=>data[k]=localStorage.getItem(k));
+download("ShopPilot-sauvegarde-V6.json",JSON.stringify(data,null,2),"application/json");
+}
+async function restaurer(){
+let f=el("fichier").files[0];
+if(!f){alert("Sélectionnez votre fichier JSON");return}
+try{
+let d=JSON.parse(await f.text());
+if(!d||typeof d!=="object"||Array.isArray(d))throw Error();
+for(let k of Object.values(keys)){
+if(d[k]!==undefined&&d[k]!==null){
+let parsed=typeof d[k]==="string"?JSON.parse(d[k]):d[k];
+if(!Array.isArray(parsed))throw Error();
+}
+}
+if(!confirm("Remplacer les données actuelles par la sauvegarde ?"))return;
+Object.entries(d).forEach(([k,val])=>{
+if(!k.startsWith("shoppilot_"))return;
+if(val===null)localStorage.removeItem(k);
+else localStorage.setItem(k,typeof val==="string"?val:JSON.stringify(val));
+});
+render();alert("Restauration terminée !");
+}catch(e){alert("Fichier de sauvegarde invalide");}
+}
+function exportCSV(){
+let rows=[["Date","Client","Produit","Quantité","Total","Paiement"],...get("ventes").map(v=>[v.date,v.client,v.produit,v.quantite,v.total,v.paiement])];
+let csv="\uFEFF"+rows.map(r=>r.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(";")).join("\r\n");
+download("ShopPilot-rapport-V6.csv",csv,"text/csv;charset=utf-8");
+}
+render();
+  
+function modifierPrixAchat(id){
+ const produits=get("produits");
+ const p=produits.find(x=>String(x.id)===String(id));
+ if(!p)return alert("Produit introuvable");
+
+ const saisie=prompt(
+  "Prix d'achat de "+p.nom+" en euros :",
+  p.achat===undefined?"":p.achat
+ );
+ if(saisie===null)return;
+
+ const valeur=saisie.trim().replace(",",".");
+ const achat=Number(valeur);
+
+ if(!valeur||!Number.isFinite(achat)||achat<0){
+  alert("Prix d'achat invalide");
+  return;
+ }
+
+ if(!confirm("Enregistrer le prix d'achat de "+achat+" € ?"))
+  return;
+
+ p.achat=achat;
+
+ try{
+  save("produits",produits);
+  render();
+  alert("Prix d'achat enregistré !");
+ }catch(e){
+  alert("Enregistrement impossible");
+ }
+}
+
+const ancienRender=render;
+render=function(){
+ ancienRender();
+
+ const produits=get("produits");
+ const zone=el("listeProduits");
+
+ const titre=document.createElement("h3");
+ titre.textContent="Modifier les prix d'achat";
+ zone.append(titre);
+
+ produits.forEach(p=>{
+  const ligne=document.createElement("div");
+  ligne.style.padding="10px 0";
+
+  const nom=document.createElement("p");
+  nom.textContent=p.nom+" — Achat : "+
+   (p.achat===undefined?"À saisir":money(p.achat));
+
+  const btn=document.createElement("button");
+  btn.textContent="Modifier le prix d'achat";
+  btn.onclick=()=>modifierPrixAchat(p.id);
+
+  ligne.append(nom,btn);
+  zone.append(ligne);
+ });
+};
+
+  
+</script>
+</body>
+</html>
