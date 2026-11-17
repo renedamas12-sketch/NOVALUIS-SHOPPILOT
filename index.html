@@ -3,622 +3,416 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
- content="width=device-width, initial-scale=1">
-<title>ShopPilot V3 - Gestion commerciale</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ShopPilot V4</title>
 <style>
-* { box-sizing: border-box; }
-body {
- margin: 0;
- font-family: Arial, sans-serif;
- background: #f3f6fb;
- color: #17243a;
-}
-header {
- background: #123b86;
- color: white;
- padding: 22px 16px;
-}
-header h1 { margin: 0; }
-header p { margin-bottom: 0; }
-main {
- max-width: 900px;
- margin: auto;
- padding: 16px;
-}
-.cards {
- display: grid;
- grid-template-columns: repeat(2, 1fr);
- gap: 12px;
-}
-.card, .panel {
- background: white;
- padding: 18px;
- border-radius: 12px;
- margin-bottom: 14px;
- box-shadow: 0 2px 8px #0000000b;
-}
-.card strong {
- font-size: 23px;
- color: #123b86;
- overflow-wrap: anywhere;
-}
-input, select {
- width: 100%;
- padding: 12px;
- margin: 6px 0 12px;
- border: 1px solid #ccd4e0;
- border-radius: 8px;
- font-size: 16px;
-}
-button {
- background: #123b86;
- color: white;
- border: none;
- border-radius: 8px;
- padding: 12px;
- margin: 3px 3px 3px 0;
- cursor: pointer;
-}
-button:disabled {
- opacity: .5;
- cursor: not-allowed;
-}
-.secondary { background: #475569; }
-.danger { background: #b42318; }
-.item {
- padding: 14px 0;
- border-bottom: 1px solid #e2e8f0;
-}
-.item h3 { margin-bottom: 6px; }
-.alert {
- color: #9a3412;
- background: #ffedd5;
- padding: 8px;
- border-radius: 6px;
-}
-.ok { color: #166534; }
-small { color: #64748b; }
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#17243a}
+header{background:#123b86;color:white;padding:22px 16px}
+header h1{margin:0}
+main{max-width:900px;margin:auto;padding:16px}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.card,.panel{background:white;padding:18px;border-radius:12px;margin-bottom:14px;box-shadow:0 2px 8px #0000000b}
+.card strong{font-size:23px;color:#123b86;overflow-wrap:anywhere}
+input,select{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #ccd4e0;border-radius:8px;font-size:16px}
+button{background:#123b86;color:white;border:0;border-radius:8px;padding:12px;margin:3px;cursor:pointer}
+button:disabled{opacity:.5}
+.secondary{background:#475569}
+.danger{background:#b42318}
+.item{border-bottom:1px solid #e2e8f0;padding:12px 0}
+.alert{color:#9a3412;background:#ffedd5;padding:8px;border-radius:6px}
+.ok{color:#166534}
+small{color:#64748b}
 </style>
 </head>
 <body>
-
 <header>
 <h1>ShopPilot</h1>
 <p>Votre boutique, votre réussite.</p>
 </header>
-
 <main>
 
 <section class="panel">
 <h2>Ma boutique</h2>
-<input id="boutique"
- placeholder="Nom de votre boutique">
-<button onclick="sauverBoutique()">
-Enregistrer le nom
-</button>
+<input id="boutique" placeholder="Nom de la boutique">
+<button onclick="sauverBoutique()">Enregistrer le nom</button>
 </section>
 
 <h2>Tableau de bord</h2>
 <div class="cards">
-<div class="card">
-<p>Chiffre d'affaires</p>
-<strong id="ca">0</strong>
-</div>
-<div class="card">
-<p>Ventes</p>
-<strong id="nbVentes">0</strong>
-</div>
-<div class="card">
-<p>Produits</p>
-<strong id="nbProduits">0</strong>
-</div>
-<div class="card">
-<p>Stocks faibles</p>
-<strong id="faibles">0</strong>
-</div>
+<div class="card"><p>Chiffre d'affaires</p><strong id="ca">0</strong></div>
+<div class="card"><p>Ventes</p><strong id="nbVentes">0</strong></div>
+<div class="card"><p>Produits</p><strong id="nbProduits">0</strong></div>
+<div class="card"><p>Stocks faibles</p><strong id="faibles">0</strong></div>
+<div class="card"><p>Clients</p><strong id="nbClients">0</strong></div>
+<div class="card"><p>Commandes</p><strong id="nbCommandes">0</strong></div>
 </div>
 
 <section class="panel">
 <h2>Enregistrer une vente</h2>
 <form id="formVente">
-<label for="produitVente">Produit</label>
+<label>Produit</label>
 <select id="produitVente" required></select>
-
-<label for="quantiteVente">Quantité vendue</label>
-<input id="quantiteVente" type="number"
- min="1" step="1" value="1" required>
-
-<button type="submit">
-Enregistrer la vente
-</button>
+<label>Quantité vendue</label>
+<input id="quantiteVente" type="number" min="1" step="1" value="1" required>
+<button type="submit">Enregistrer la vente</button>
 </form>
 </section>
 
 <section class="panel">
 <h2>Ajouter un produit</h2>
 <form id="formProduit">
-<label for="nom">Nom du produit</label>
-<input id="nom" required maxlength="100"
- placeholder="Ex : Ordinateur HP">
-
-<label for="prix">Prix de vente</label>
-<input id="prix" type="number"
- min="0.01" step="0.01" required
- placeholder="Ex : 350">
-
-<label for="stock">Quantité en stock</label>
-<input id="stock" type="number"
- min="0" step="1" required
- placeholder="Ex : 10">
-
+<input id="nom" placeholder="Nom du produit" maxlength="100" required>
+<input id="prix" type="number" min="0.01" step="0.01" placeholder="Prix" required>
+<input id="stock" type="number" min="0" step="1" placeholder="Stock" required>
 <button type="submit">Ajouter le produit</button>
 </form>
 </section>
 
 <section class="panel">
 <h2>Mes produits</h2>
-<input id="recherche"
- placeholder="Rechercher un produit">
+<input id="recherche" placeholder="Rechercher un produit">
 <div id="liste"></div>
+</section>
+
+<section class="panel">
+<h2>Gestion des clients</h2>
+<form id="formClient">
+<input id="nomClient" placeholder="Nom du client" maxlength="100" required>
+<input id="telClient" type="tel" placeholder="Téléphone" maxlength="30">
+<input id="emailClient" type="email" placeholder="E-mail">
+<input id="adresseClient" placeholder="Adresse" maxlength="200">
+<button type="submit">Ajouter le client</button>
+</form>
+<input id="rechercheClient" placeholder="Rechercher un client">
+<div id="listeClients"></div>
+</section>
+
+<section class="panel">
+<h2>Créer une commande</h2>
+<form id="formCommande">
+<label>Client</label>
+<select id="clientCommande" required></select>
+<label>Produit</label>
+<select id="produitCommande" required></select>
+<label>Quantité</label>
+<input id="quantiteCommande" type="number" min="1" step="1" value="1" required>
+<button type="submit">Créer la commande</button>
+</form>
+<p><small>La commande réserve le stock. Elle n'est pas comptée comme une vente.</small></p>
+</section>
+
+<section class="panel">
+<h2>Suivi des commandes</h2>
+<div id="listeCommandes"></div>
 </section>
 
 <section class="panel">
 <h2>Historique des ventes</h2>
 <div id="historique"></div>
 </section>
-
 </main>
 
 <script>
-const cleProduits = "shoppilot_produits_v1";
-const cleVentes = "shoppilot_ventes_v1";
-const cleBoutique = "shoppilot_boutique";
+const KP="shoppilot_produits_v1";
+const KV="shoppilot_ventes_v1";
+const KB="shoppilot_boutique";
+const KC="shoppilot_clients_v1";
+const KO="shoppilot_commandes_v1";
 
-let catalogue = [];
-let ventes = [];
+function charger(cle){
+ try{
+  const d=JSON.parse(localStorage.getItem(cle)||"[]");
+  return Array.isArray(d)?d:[];
+ }catch(e){return []}
+}
+let produits=charger(KP);
+let ventes=charger(KV);
+let clients=charger(KC);
+let commandes=charger(KO);
 
-function charger(cle) {
- try {
-  const donnees = JSON.parse(
-   localStorage.getItem(cle) || "[]"
-  );
-  return Array.isArray(donnees) ? donnees : [];
- } catch (e) {
-  return [];
- }
+const el=id=>document.getElementById(id);
+const idUnique=()=>Date.now()+"-"+Math.random().toString(36).slice(2);
+const argent=n=>Number(n).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const entier=n=>Number.isSafeInteger(n)&&n>=0;
+const montant=n=>Number.isFinite(n)&&n>0&&Number.isSafeInteger(Math.round(n*100));
+
+el("boutique").value=localStorage.getItem(KB)||"";
+function sauverBoutique(){
+ const nom=el("boutique").value.trim();
+ if(!nom)return alert("Saisissez un nom.");
+ try{localStorage.setItem(KB,nom);alert("Nom enregistré !")}
+ catch(e){alert("Enregistrement impossible.")}
 }
 
-catalogue = charger(cleProduits);
-ventes = charger(cleVentes);
-
-const champBoutique =
- document.getElementById("boutique");
-
-champBoutique.value =
- localStorage.getItem(cleBoutique) || "";
-
-function sauverBoutique() {
- const nom = champBoutique.value.trim();
- if (!nom) {
-  alert("Saisissez un nom de boutique.");
-  return;
- }
- try {
-  localStorage.setItem(cleBoutique, nom);
-  alert("Nom enregistré !");
- } catch (e) {
-  alert("Enregistrement impossible.");
- }
-}
-
-function argent(montant) {
- return Number(montant).toLocaleString(
-  "fr-FR",
-  {minimumFractionDigits: 2,
-   maximumFractionDigits: 2}
- );
-}
-
-function sauvegarderProduits(nouveau) {
- try {
-  localStorage.setItem(
-   cleProduits, JSON.stringify(nouveau)
-  );
-  catalogue = nouveau;
-  afficher();
+function sauver(changements){
+ const anciens={};
+ const ecrits=[];
+ try{
+  for(const [cle] of changements)anciens[cle]=localStorage.getItem(cle);
+  for(const [cle,valeur] of changements){
+   localStorage.setItem(cle,JSON.stringify(valeur));
+   ecrits.push(cle);
+  }
   return true;
- } catch (e) {
-  alert("Sauvegarde impossible.");
+ }catch(e){
+  for(const cle of ecrits.reverse()){
+   try{
+    if(anciens[cle]===null)localStorage.removeItem(cle);
+    else localStorage.setItem(cle,anciens[cle]);
+   }catch(err){}
+  }
+  alert("Sauvegarde impossible. Vérifiez les données.");
   return false;
  }
 }
-
-document.getElementById("formProduit")
- .addEventListener("submit", function(e) {
- e.preventDefault();
-
- const nom = document.getElementById(
-  "nom"
- ).value.trim();
- const prix = Number(
-  document.getElementById("prix").value
- );
- const stock = Number(
-  document.getElementById("stock").value
- );
-
- if (!nom || !Number.isFinite(prix)
-  || prix <= 0
-  || !Number.isSafeInteger(stock)
-  || stock < 0) {
-  alert("Informations invalides.");
-  return;
- }
-
- const produit = {
-  id: Date.now() + "-" +
-   Math.random().toString(36).slice(2),
-  nom, prix, stock
- };
-
- if (sauvegarderProduits(
-  [...catalogue, produit]
- )) this.reset();
-});
-
-function modifier(id) {
- const p = catalogue.find(
-  x => String(x.id) === String(id)
- );
- if (!p) return;
-
- const saisieNom = prompt(
-  "Nom du produit :", p.nom
- );
- if (saisieNom === null) return;
- const nom = saisieNom.trim();
-
- if (!nom || nom.length > 100) {
-  alert("Nom invalide.");
-  return;
- }
-
- const saisiePrix = prompt(
-  "Prix du produit :", p.prix
- );
- if (saisiePrix === null) return;
- const prix = Number(saisiePrix);
-
- if (!saisiePrix.trim()
-  || !Number.isFinite(prix)
-  || prix <= 0) {
-  alert("Prix invalide.");
-  return;
- }
-
- const saisieStock = prompt(
-  "Quantité en stock :", p.stock
- );
- if (saisieStock === null) return;
- const stock = Number(saisieStock);
-
- if (!saisieStock.trim()
-  || !Number.isSafeInteger(stock)
-  || stock < 0) {
-  alert("Stock invalide.");
-  return;
- }
-
- const nouveau = catalogue.map(
-  x => String(x.id) === String(id)
-   ? {...x, nom, prix, stock} : x
- );
- sauvegarderProduits(nouveau);
+function majProduits(n){
+ if(sauver([[KP,n]])){produits=n;afficher();return true}
+ return false;
 }
-
-function changerStock(id, variation) {
- const p = catalogue.find(
-  x => String(x.id) === String(id)
- );
- if (!p) return;
-
- const stock = Number(p.stock) + variation;
- if (!Number.isSafeInteger(stock)
-  || stock < 0) {
-  alert("Stock insuffisant.");
-  return;
- }
-
- sauvegarderProduits(catalogue.map(
-  x => String(x.id) === String(id)
-   ? {...x, stock} : x
- ));
-}
-
-function supprimer(id) {
- if (!confirm("Supprimer ce produit ?"))
-  return;
-
- sauvegarderProduits(catalogue.filter(
-  x => String(x.id) !== String(id)
- ));
-}
-
-document.getElementById("formVente")
- .addEventListener("submit", function(e) {
- e.preventDefault();
-
- const id = document.getElementById(
-  "produitVente"
- ).value;
- const quantite = Number(
-  document.getElementById(
-   "quantiteVente"
-  ).value
- );
-
- const p = catalogue.find(
-  x => String(x.id) === id
- );
-
- if (!p || !Number.isSafeInteger(quantite)
-  || quantite <= 0) {
-  alert("Vente invalide.");
-  return;
- }
-
- if (!Number.isSafeInteger(Number(p.stock))
-  || Number(p.stock) < quantite) {
-  alert("Stock insuffisant !");
-  return;
- }
-
- const prix = Number(p.prix);
- const total = Math.round(
-  prix * quantite * 100
- ) / 100;
-
- if (!Number.isFinite(total)
-  || !Number.isSafeInteger(
-   Math.round(total * 100)
-  )) {
-  alert("Montant invalide.");
-  return;
- }
-
- const vente = {
-  id: Date.now() + "-" +
-   Math.random().toString(36).slice(2),
-  produit: p.nom,
-  quantite,
-  prix,
-  total,
-  date: new Date().toISOString()
- };
-
- const nouveauCatalogue = catalogue.map(
-  x => String(x.id) === id
-   ? {...x, stock: Number(x.stock) - quantite}
-   : x
- );
- const nouvellesVentes = [...ventes, vente];
-
- // Enregistrer les deux données avec
- // restauration en cas d'échec.
- const ancienneValeur =
-  localStorage.getItem(cleProduits);
-
- try {
-  localStorage.setItem(
-   cleProduits,
-   JSON.stringify(nouveauCatalogue)
-  );
-  localStorage.setItem(
-   cleVentes,
-   JSON.stringify(nouvellesVentes)
-  );
- } catch (erreur) {
-  try {
-   if (ancienneValeur === null) {
-    localStorage.removeItem(cleProduits);
-   } else {
-    localStorage.setItem(
-     cleProduits, ancienneValeur
-    );
-   }
-  } catch (e) {}
-  alert("Enregistrement de vente impossible.");
-  return;
- }
-
- catalogue = nouveauCatalogue;
- ventes = nouvellesVentes;
- afficher();
- this.reset();
- alert("Vente enregistrée !");
-});
-
-function creerBouton(texte, action, classe) {
- const b = document.createElement("button");
- b.textContent = texte;
- if (classe) b.className = classe;
- b.addEventListener("click", action);
+function bouton(t,action,classe){
+ const b=document.createElement("button");
+ b.textContent=t;
+ if(classe)b.className=classe;
+ b.onclick=action;
  return b;
 }
-
-function afficher() {
- document.getElementById(
-  "nbProduits"
- ).textContent = catalogue.length;
-
- document.getElementById(
-  "nbVentes"
- ).textContent = ventes.length;
-
- const totalCA = ventes.reduce(
-  (somme, v) => somme + Number(v.total), 0
- );
-
- document.getElementById(
-  "ca"
- ).textContent = argent(totalCA);
-
- document.getElementById(
-  "faibles"
- ).textContent = catalogue.filter(
-  p => Number(p.stock) <= 5
- ).length;
-
- afficherSelect();
- afficherProduits();
- afficherVentes();
+function ligne(titre,details){
+ const d=document.createElement("div");
+ d.className="item";
+ const h=document.createElement("h3");
+ h.textContent=titre;
+ const p=document.createElement("p");
+ p.textContent=details;
+ d.append(h,p);
+ return d;
 }
 
-function afficherSelect() {
- const select = document.getElementById(
-  "produitVente"
- );
- const precedent = select.value;
- select.replaceChildren();
+el("formProduit").onsubmit=function(e){
+ e.preventDefault();
+ const nom=el("nom").value.trim();
+ const prix=Number(el("prix").value);
+ const stock=Number(el("stock").value);
+ if(!nom||!montant(prix)||!entier(stock))return alert("Produit invalide.");
+ if(majProduits([...produits,{id:idUnique(),nom,prix,stock}]))this.reset();
+};
 
- const disponibles = catalogue.filter(
-  p => Number(p.stock) > 0
- );
+function modifierProduit(id){
+ const p=produits.find(x=>String(x.id)===String(id));
+ if(!p)return;
+ const n=prompt("Nom :",p.nom);
+ if(n===null)return;
+ const nom=n.trim();
+ if(!nom||nom.length>100)return alert("Nom invalide.");
+ const pr=prompt("Prix :",p.prix);
+ if(pr===null)return;
+ const prix=Number(pr);
+ if(!pr.trim()||!montant(prix))return alert("Prix invalide.");
+ const st=prompt("Stock :",p.stock);
+ if(st===null)return;
+ const stock=Number(st);
+ if(!st.trim()||!entier(stock))return alert("Stock invalide.");
+ majProduits(produits.map(x=>String(x.id)===String(id)?{...x,nom,prix,stock}:x));
+}
+function changerStock(id,n){
+ const p=produits.find(x=>String(x.id)===String(id));
+ if(!p)return;
+ const stock=Number(p.stock)+n;
+ if(!entier(stock))return alert("Stock insuffisant.");
+ majProduits(produits.map(x=>String(x.id)===String(id)?{...x,stock}:x));
+}
+function supprimerProduit(id){
+ if(!confirm("Supprimer ce produit ?"))return;
+ majProduits(produits.filter(x=>String(x.id)!==String(id)));
+}
 
- disponibles.forEach(p => {
-  const option = document.createElement(
-   "option"
-  );
-  option.value = String(p.id);
-  option.textContent =
-   p.nom + " - Stock : " + p.stock;
-  select.appendChild(option);
+el("formVente").onsubmit=function(e){
+ e.preventDefault();
+ const id=el("produitVente").value;
+ const q=Number(el("quantiteVente").value);
+ const p=produits.find(x=>String(x.id)===id);
+ if(!p||!entier(q)||q===0||q>Number(p.stock))return alert("Stock insuffisant ou quantité invalide.");
+ const total=Math.round(Number(p.prix)*q*100)/100;
+ if(!montant(total))return alert("Montant invalide.");
+ const v={id:idUnique(),produit:p.nom,quantite:q,prix:Number(p.prix),total,date:new Date().toISOString()};
+ const np=produits.map(x=>String(x.id)===id?{...x,stock:Number(x.stock)-q}:x);
+ const nv=[...ventes,v];
+ if(sauver([[KP,np],[KV,nv]])){
+  produits=np;ventes=nv;this.reset();afficher();
+  alert("Vente enregistrée !");
+ }
+};
+
+el("formClient").onsubmit=function(e){
+ e.preventDefault();
+ const nom=el("nomClient").value.trim();
+ if(!nom)return alert("Nom obligatoire.");
+ const c={id:idUnique(),nom,telephone:el("telClient").value.trim(),email:el("emailClient").value.trim(),adresse:el("adresseClient").value.trim()};
+ const nc=[...clients,c];
+ if(sauver([[KC,nc]])){clients=nc;this.reset();afficher()}
+};
+function modifierClient(id){
+ const c=clients.find(x=>x.id===id);
+ if(!c)return;
+ const nom=prompt("Nom :",c.nom);
+ if(nom===null)return;
+ if(!nom.trim())return alert("Nom obligatoire.");
+ const tel=prompt("Téléphone :",c.telephone||"");
+ if(tel===null)return;
+ const email=prompt("E-mail :",c.email||"");
+ if(email===null)return;
+ const adresse=prompt("Adresse :",c.adresse||"");
+ if(adresse===null)return;
+ const nc=clients.map(x=>x.id===id?{...x,nom:nom.trim(),telephone:tel.trim(),email:email.trim(),adresse:adresse.trim()}:x);
+ if(sauver([[KC,nc]])){clients=nc;afficher()}
+}
+function supprimerClient(id){
+ if(commandes.some(x=>x.clientId===id))return alert("Ce client possède des commandes. Conservez sa fiche.");
+ if(!confirm("Supprimer ce client ?"))return;
+ const nc=clients.filter(x=>x.id!==id);
+ if(sauver([[KC,nc]])){clients=nc;afficher()}
+}
+
+el("formCommande").onsubmit=function(e){
+ e.preventDefault();
+ const clientId=el("clientCommande").value;
+ const produitId=el("produitCommande").value;
+ const q=Number(el("quantiteCommande").value);
+ const c=clients.find(x=>x.id===clientId);
+ const p=produits.find(x=>String(x.id)===produitId);
+ if(!c||!p||!entier(q)||q===0||q>Number(p.stock))return alert("Client, produit ou stock invalide.");
+ const total=Math.round(Number(p.prix)*q*100)/100;
+ if(!montant(total))return alert("Montant invalide.");
+ const commande={
+  id:idUnique(),clientId,client:c.nom,produitId:String(p.id),
+  produit:p.nom,quantite:q,prix:Number(p.prix),total,
+  statut:"En attente",date:new Date().toISOString()
+ };
+ const np=produits.map(x=>String(x.id)===produitId?{...x,stock:Number(x.stock)-q}:x);
+ const nc=[...commandes,commande];
+ if(sauver([[KP,np],[KO,nc]])){
+  produits=np;commandes=nc;this.reset();afficher();
+  alert("Commande créée et stock réservé !");
+ }
+};
+
+function changerStatut(id,statut){
+ const autorises=["En attente","En préparation","Expédiée","Livrée"];
+ if(!autorises.includes(statut))return;
+ const nc=commandes.map(x=>x.id===id?{...x,statut}:x);
+ if(sauver([[KO,nc]])){commandes=nc;afficher()}
+}
+function annulerCommande(id){
+ const c=commandes.find(x=>x.id===id);
+ if(!c||c.statut==="Annulée")return;
+ if(!confirm("Annuler la commande et remettre le stock ?"))return;
+ const p=produits.find(x=>String(x.id)===c.produitId);
+ if(!p)return alert("Produit supprimé : restauration automatique impossible.");
+ const stock=Number(p.stock)+Number(c.quantite);
+ if(!entier(stock))return alert("Stock invalide.");
+ const np=produits.map(x=>String(x.id)===c.produitId?{...x,stock}:x);
+ const nc=commandes.map(x=>x.id===id?{...x,statut:"Annulée"}:x);
+ if(sauver([[KP,np],[KO,nc]])){produits=np;commandes=nc;afficher()}
+}
+
+function remplirSelect(id,donnees,texte){
+ const s=el(id),ancien=s.value;
+ s.replaceChildren();
+ donnees.forEach(x=>{
+  const o=document.createElement("option");
+  o.value=String(x.id);o.textContent=texte(x);s.append(o);
  });
-
- if (disponibles.some(
-  p => String(p.id) === precedent
- )) select.value = precedent;
-
- if (disponibles.length === 0) {
-  const option = document.createElement(
-   "option"
-  );
-  option.textContent = "Aucun produit disponible";
-  option.value = "";
-  select.appendChild(option);
+ if(donnees.some(x=>String(x.id)===ancien))s.value=ancien;
+ if(!donnees.length){
+  const o=document.createElement("option");
+  o.value="";o.textContent="Aucune option disponible";s.append(o);
  }
-
- document.querySelector(
-  "#formVente button"
- ).disabled = disponibles.length === 0;
 }
+function afficher(){
+ el("nbProduits").textContent=produits.length;
+ el("nbVentes").textContent=ventes.length;
+ el("nbClients").textContent=clients.length;
+ el("nbCommandes").textContent=commandes.filter(x=>x.statut!=="Annulée").length;
+ el("faibles").textContent=produits.filter(x=>Number(x.stock)<=5).length;
+ el("ca").textContent=argent(ventes.reduce((s,v)=>s+Number(v.total),0));
 
-function afficherProduits() {
- const liste = document.getElementById(
-  "liste"
- );
- const recherche = document.getElementById(
-  "recherche"
- ).value.trim().toLowerCase();
+ const disponibles=produits.filter(x=>Number(x.stock)>0);
+ remplirSelect("produitVente",disponibles,x=>x.nom+" - Stock : "+x.stock);
+ remplirSelect("produitCommande",disponibles,x=>x.nom+" - Stock : "+x.stock);
+ remplirSelect("clientCommande",clients,x=>x.nom);
+ el("formVente").querySelector("button").disabled=!disponibles.length;
+ el("formCommande").querySelector("button").disabled=!disponibles.length||!clients.length;
 
- liste.replaceChildren();
-
- const resultats = catalogue.filter(
-  p => String(p.nom).toLowerCase()
-   .includes(recherche)
- );
-
- if (resultats.length === 0) {
-  liste.textContent = "Aucun produit trouvé.";
-  return;
- }
-
- resultats.forEach(p => {
-  const div = document.createElement("div");
-  div.className = "item";
-
-  const titre = document.createElement("h3");
-  titre.textContent = p.nom;
-
-  const details = document.createElement("p");
-  details.textContent =
-   "Prix : " + argent(p.prix) +
-   " | Stock : " + p.stock;
-
-  const statut = document.createElement("p");
-  if (Number(p.stock) === 0) {
-   statut.textContent = "Rupture de stock";
-   statut.className = "alert";
-  } else if (Number(p.stock) <= 5) {
-   statut.textContent = "Stock faible";
-   statut.className = "alert";
-  } else {
-   statut.textContent = "Stock disponible";
-   statut.className = "ok";
+ afficherProduits();afficherClients();afficherCommandes();afficherVentes();
+}
+function afficherProduits(){
+ const liste=el("liste");liste.replaceChildren();
+ const recherche=el("recherche").value.toLowerCase();
+ const resultats=produits.filter(x=>String(x.nom).toLowerCase().includes(recherche));
+ if(!resultats.length){liste.textContent="Aucun produit trouvé.";return}
+ resultats.forEach(p=>{
+  const d=ligne(p.nom,"Prix : "+argent(p.prix)+" | Stock : "+p.stock);
+  const statut=document.createElement("p");
+  statut.textContent=Number(p.stock)===0?"Rupture de stock":Number(p.stock)<=5?"Stock faible":"Stock disponible";
+  statut.className=Number(p.stock)<=5?"alert":"ok";
+  d.append(statut,
+   bouton("Modifier",()=>modifierProduit(p.id)),
+   bouton("+ Stock",()=>changerStock(p.id,1)),
+   bouton("- Stock",()=>changerStock(p.id,-1),"secondary"),
+   bouton("Supprimer",()=>supprimerProduit(p.id),"danger"));
+  liste.append(d);
+ });
+}
+function afficherClients(){
+ const liste=el("listeClients");liste.replaceChildren();
+ const recherche=el("rechercheClient").value.toLowerCase();
+ const resultats=clients.filter(x=>x.nom.toLowerCase().includes(recherche));
+ if(!resultats.length){liste.textContent="Aucun client trouvé.";return}
+ resultats.forEach(c=>{
+  const d=ligne(c.nom,[c.telephone,c.email,c.adresse].filter(Boolean).join(" | "));
+  d.append(
+   bouton("Modifier",()=>modifierClient(c.id)),
+   bouton("Supprimer",()=>supprimerClient(c.id),"danger"));
+  liste.append(d);
+ });
+}
+function afficherCommandes(){
+ const liste=el("listeCommandes");liste.replaceChildren();
+ if(!commandes.length){liste.textContent="Aucune commande.";return}
+ [...commandes].reverse().forEach(c=>{
+  const d=ligne(c.client+" - "+c.produit,
+   "Quantité : "+c.quantite+" | Total : "+argent(c.total)+" | Statut : "+c.statut);
+  const date=document.createElement("small");
+  date.textContent=new Date(c.date).toLocaleString("fr-FR");
+  d.append(date);
+  if(c.statut!=="Annulée"){
+   const s=document.createElement("select");
+   ["En attente","En préparation","Expédiée","Livrée"].forEach(st=>{
+    const o=document.createElement("option");
+    o.value=st;o.textContent=st;s.append(o);
+   });
+   s.value=c.statut;
+   s.onchange=()=>changerStatut(c.id,s.value);
+   d.append(s);
+   if(c.statut!=="Livrée")
+    d.append(bouton("Annuler",()=>annulerCommande(c.id),"danger"));
   }
-
-  div.append(
-   titre, details, statut,
-   creerBouton(
-    "Modifier", () => modifier(p.id)
-   ),
-   creerBouton(
-    "+ Stock", () => changerStock(p.id, 1)
-   ),
-   creerBouton(
-    "- Stock",
-    () => changerStock(p.id, -1),
-    "secondary"
-   ),
-   creerBouton(
-    "Supprimer",
-    () => supprimer(p.id),
-    "danger"
-   )
-  );
-  liste.appendChild(div);
+  liste.append(d);
  });
 }
-
-function afficherVentes() {
- const historique = document.getElementById(
-  "historique"
- );
- historique.replaceChildren();
-
- if (ventes.length === 0) {
-  historique.textContent =
-   "Aucune vente enregistrée.";
-  return;
- }
-
- [...ventes].reverse().forEach(v => {
-  const div = document.createElement("div");
-  div.className = "item";
-
-  const titre = document.createElement("h3");
-  titre.textContent = v.produit;
-
-  const details = document.createElement("p");
-  details.textContent =
-   "Quantité : " + v.quantite +
-   " | Prix : " + argent(v.prix) +
-   " | Total : " + argent(v.total);
-
-  const date = document.createElement("small");
-  date.textContent = new Date(
-   v.date
-  ).toLocaleString("fr-FR");
-
-  div.append(titre, details, date);
-  historique.appendChild(div);
+function afficherVentes(){
+ const liste=el("historique");liste.replaceChildren();
+ if(!ventes.length){liste.textContent="Aucune vente enregistrée.";return}
+ [...ventes].reverse().forEach(v=>{
+  const d=ligne(v.produit,
+   "Quantité : "+v.quantite+" | Total : "+argent(v.total));
+  const date=document.createElement("small");
+  date.textContent=new Date(v.date).toLocaleString("fr-FR");
+  d.append(date);liste.append(d);
  });
 }
-
-document.getElementById("recherche")
- .addEventListener("input", afficherProduits);
-
+el("recherche").oninput=afficherProduits;
+el("rechercheClient").oninput=afficherClients;
 afficher();
 </script>
 </body>
