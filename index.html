@@ -127,6 +127,101 @@ small{color:#667}
 <p><small>La restauration remplace les données actuelles après confirmation.</small></p>
 </div>
 </section>
+
+<section id="fournisseurs">
+  <h2>Gestion des fournisseurs</h2>
+
+  <div class="panel">
+    <label>Nom du fournisseur</label>
+    <input id="nomFournisseur"
+           placeholder="Ex : Fournisseur HP">
+
+    <label>Téléphone</label>
+    <input id="telFournisseur"
+           placeholder="Téléphone">
+
+    <label>Email</label>
+    <input id="emailFournisseur"
+           type="email"
+           placeholder="Email">
+
+    <label>Produit fourni</label>
+    <input id="produitFournisseur"
+           placeholder="Ex : Ordinateurs">
+
+    <button onclick="ajouterFournisseur()">
+      Enregistrer le fournisseur
+    </button>
+  </div>
+
+  <div class="panel scroll"
+       id="listeFournisseurs"></div>
+</section>
+
+<section id="fournisseurs">
+  <h2>Gestion des fournisseurs</h2>
+
+  <div class="panel">
+    <label>Nom du fournisseur</label>
+    <input id="nomFournisseur"
+           placeholder="Ex : Fournisseur HP">
+
+    <label>Téléphone</label>
+    <input id="telFournisseur"
+           placeholder="Téléphone">
+
+    <label>Email</label>
+    <input id="emailFournisseur"
+           type="email"
+           placeholder="Email">
+    
+
+<button onclick="show('fournisseurs')">Fournisseurs</button>
+
+    <label>Produit fourni</label>
+    <input id="produitFournisseur"
+           placeholder="Ex : Ordinateurs">
+
+    <button onclick="ajouterFournisseur()">
+      Enregistrer le fournisseur
+    </button>
+  </div>
+
+  <div class="panel scroll"
+       id="listeFournisseurs"></div>
+</section>
+
+  
+<section id="fournisseurs">
+  <h2>Gestion des fournisseurs</h2>
+
+  <div class="panel">
+    <label>Nom du fournisseur</label>
+    <input id="nomFournisseur"
+           placeholder="Ex : Fournisseur HP">
+
+    <label>Téléphone</label>
+    <input id="telFournisseur"
+           placeholder="Téléphone">
+
+    <label>Email</label>
+    <input id="emailFournisseur"
+           type="email"
+           placeholder="Email">
+
+    <label>Produit fourni</label>
+    <input id="produitFournisseur"
+           placeholder="Ex : Ordinateurs">
+
+    <button onclick="ajouterFournisseur()">
+      Enregistrer le fournisseur
+    </button>
+  </div>
+
+  <div class="panel scroll"
+       id="listeFournisseurs"></div>
+</section>
+
 </main>
 <script>
 const keys={
@@ -412,6 +507,67 @@ tableauV7();
 // FIN MODULE V7
 
   
+/* SHOPPILOT V7 - FOURNISSEURS */
+
+keys.fournisseurs = "shoppilot_fournisseurs_v1";
+
+function ajouterFournisseur() {
+  const nom = el("nomFournisseur").value.trim();
+  const telephone = el("telFournisseur").value.trim();
+  const email = el("emailFournisseur").value.trim();
+  const produit = el("produitFournisseur").value.trim();
+
+  if (!nom) {
+    alert("Indiquez le nom du fournisseur");
+    return;
+  }
+
+  const fournisseurs = get("fournisseurs");
+
+  fournisseurs.push({
+    id: uid(),
+    nom,
+    telephone,
+    email,
+    produit
+  });
+
+  save("fournisseurs", fournisseurs);
+
+  ["nomFournisseur", "telFournisseur",
+   "emailFournisseur", "produitFournisseur"]
+    .forEach(id => el(id).value = "");
+
+  render();
+  alert("Fournisseur enregistré !");
+}
+
+function afficherFournisseurs() {
+  const zone = el("listeFournisseurs");
+  if (!zone) return;
+
+  const fournisseurs = get("fournisseurs");
+
+  zone.innerHTML = table(
+    ["Nom", "Téléphone", "Email", "Produit"],
+    fournisseurs.map(f => [
+      esc(f.nom),
+      esc(f.telephone),
+      esc(f.email),
+      esc(f.produit)
+    ])
+  );
+}
+
+const renderAvantFournisseurs = render;
+
+render = function() {
+  renderAvantFournisseurs();
+  afficherFournisseurs();
+};
+
+render();
+
 </script>
 </body>
 </html>
