@@ -641,6 +641,47 @@ function afficher(){
 el("recherche").oninput=afficherProduits;
 el("rechercheClient").oninput=afficherClients;
 afficher();
+ 
+function sauvegarderDonnees(){
+ const cles=[
+  "shoppilot_produits_v1",
+  "shoppilot_ventes_v1",
+  "shoppilot_boutique",
+  "shoppilot_clients_v1",
+  "shoppilot_commandes_v1",
+  "shoppilot_devise_v1"
+ ];
+ const donnees={};
+ cles.forEach(k=>{
+  donnees[k]=localStorage.getItem(k);
+ });
+ const fichier=new Blob(
+  [JSON.stringify(donnees,null,2)],
+  {type:"application/json"}
+ );
+ const url=URL.createObjectURL(fichier);
+ const a=document.createElement("a");
+ a.href=url;
+ a.download="ShopPilot-sauvegarde-V5.json";
+ document.body.append(a);
+ a.click();
+ a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+const boutonSauvegarde=document.createElement("button");
+boutonSauvegarde.textContent="Sauvegarder mes données";
+boutonSauvegarde.onclick=sauvegarderDonnees;
+document.querySelector("main").prepend(boutonSauvegarde);
+
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+  
