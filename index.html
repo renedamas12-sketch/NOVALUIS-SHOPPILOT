@@ -2,51 +2,262 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ShopPilot</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #eef3fa;
-      padding: 30px 15px;
-      text-align: center;
-    }
-    .carte {
-      background: white;
-      padding: 25px;
-      border-radius: 15px;
-      max-width: 400px;
-      margin: auto;
-    }
-    input, button {
-      box-sizing: border-box;
-      width: 100%;
-      padding: 14px;
-      margin-top: 15px;
-      border-radius: 8px;
-    }
-    button {
-      background: #2563eb;
-      color: white;
-      border: none;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShopPilot - Tableau de bord</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6fb;
+  color: #17243a;
+}
+header {
+  background: #123b86;
+  color: white;
+  padding: 22px 16px;
+}
+header h1 { margin: 0; }
+header p { margin-bottom: 0; }
+main {
+  max-width: 850px;
+  margin: auto;
+  padding: 16px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.card, .panel {
+  background: white;
+  padding: 18px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px #0000000b;
+}
+.card strong {
+  font-size: 26px;
+  color: #123b86;
+}
+button {
+  background: #123b86;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+}
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0 12px;
+  border: 1px solid #ccd4e0;
+  border-radius: 8px;
+}
+.item {
+  border-bottom: 1px solid #eee;
+  padding: 12px 0;
+}
+.item button { margin-top: 8px; }
+</style>
 </head>
 <body>
-  <div class="carte">
-    <h1>ShopPilot</h1>
-    <p>Votre logiciel de gestion de boutique</p>
-    <input id="boutique" placeholder="Nom de votre boutique">
-    <button onclick="continuer()">Continuer</button>
-    <h2 id="message"></h2>
+
+<header>
+  <h1>ShopPilot</h1>
+  <p>Votre boutique, votre réussite.</p>
+</header>
+
+<main>
+<section class="panel">
+  <h2>Ma boutique</h2>
+  <input id="boutique"
+    placeholder="Nom de votre boutique">
+  <button onclick="sauverBoutique()">
+    Enregistrer le nom
+  </button>
+</section>
+
+<h2>Tableau de bord</h2>
+<div class="cards">
+  <div class="card">
+    <p>Ventes</p>
+    <strong id="ventes">0</strong>
   </div>
-  <script>
-    function continuer() {
-      const nom = document.getElementById("boutique").value.trim();
-      document.getElementById("message").textContent =
-        nom ? "Bienvenue chez " + nom + " !" : "Entrez le nom de votre boutique.";
+  <div class="card">
+    <p>Produits</p>
+    <strong id="produits">0</strong>
+  </div>
+  <div class="card">
+    <p>Commandes</p>
+    <strong id="commandes">0</strong>
+  </div>
+  <div class="card">
+    <p>Clients</p>
+    <strong id="clients">0</strong>
+  </div>
+</div>
+
+<section class="panel">
+  <h2>Ajouter un produit</h2>
+  <form id="formProduit">
+    <input id="nom" placeholder="Nom du produit"
+      required maxlength="100">
+    <input id="prix" type="number"
+      placeholder="Prix" min="0.01"
+      step="0.01" required>
+    <input id="stock" type="number"
+      placeholder="Quantité en stock"
+      min="0" step="1" required>
+    <button type="submit">
+      Ajouter le produit
+    </button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Mes produits</h2>
+  <div id="liste"></div>
+</section>
+
+<section class="panel">
+  <h2>Commandes et clients</h2>
+  <p>Ces fonctionnalités seront ajoutées
+  dans les prochaines étapes.</p>
+</section>
+</main>
+
+<script>
+const cle = "shoppilot_produits_v1";
+let catalogue = [];
+
+try {
+  const donnees = JSON.parse(
+    localStorage.getItem(cle) || "[]"
+  );
+  catalogue = Array.isArray(donnees)
+    ? donnees : [];
+} catch (e) {
+  catalogue = [];
+}
+
+document.getElementById("boutique").value =
+  localStorage.getItem("shoppilot_boutique")
+  || "";
+
+function sauverBoutique() {
+  const nom = document.getElementById(
+    "boutique"
+  ).value.trim();
+
+  if (!nom) {
+    alert("Entrez un nom de boutique.");
+    return;
+  }
+
+  localStorage.setItem(
+    "shoppilot_boutique", nom
+  );
+  alert("Nom enregistré !");
+}
+
+document.getElementById("formProduit")
+  .addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const nom = document.getElementById(
+      "nom"
+    ).value.trim();
+    const prix = Number(
+      document.getElementById("prix").value
+    );
+    const stock = Number(
+      document.getElementById("stock").value
+    );
+
+    if (!nom || !Number.isFinite(prix)
+      || prix <= 0
+      || !Number.isSafeInteger(stock)
+      || stock < 0) {
+      alert("Vérifiez les informations.");
+      return;
     }
-  </script>
+
+    catalogue.push({
+      id: Date.now() + "-" +
+        Math.random().toString(36).slice(2),
+      nom: nom,
+      prix: prix,
+      stock: stock
+    });
+
+    enregistrer();
+    this.reset();
+  });
+
+function enregistrer() {
+  try {
+    localStorage.setItem(
+      cle, JSON.stringify(catalogue)
+    );
+    afficher();
+  } catch (e) {
+    alert("Enregistrement impossible.");
+  }
+}
+
+function supprimer(id) {
+  if (!confirm("Supprimer ce produit ?"))
+    return;
+
+  catalogue = catalogue.filter(
+    p => p.id !== id
+  );
+  enregistrer();
+}
+
+function afficher() {
+  document.getElementById(
+    "produits"
+  ).textContent = catalogue.length;
+
+  const liste = document.getElementById(
+    "liste"
+  );
+  liste.replaceChildren();
+
+  if (catalogue.length === 0) {
+    liste.textContent =
+      "Aucun produit pour le moment.";
+    return;
+  }
+
+  catalogue.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "item";
+
+    const titre = document.createElement("b");
+    titre.textContent = p.nom;
+
+    const details = document.createElement("p");
+    details.textContent =
+      "Prix : " + p.prix +
+      " | Stock : " + p.stock;
+
+    const bouton = document.createElement(
+      "button"
+    );
+    bouton.textContent = "Supprimer";
+    bouton.onclick = () => supprimer(p.id);
+
+    div.append(titre, details, bouton);
+    liste.appendChild(div);
+  });
+}
+
+afficher();
+</script>
 </body>
 </html>
