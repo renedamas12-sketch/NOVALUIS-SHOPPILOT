@@ -225,6 +225,41 @@ small{color:#667}
   <div class="panel scroll"
        id="listeFournisseurs"></div>
 </section>
+  
+<!-- SHOPPILOT V7 : DEPENSES -->
+<section id="depenses">
+  <h2>Gestion des dépenses</h2>
+
+  <div class="panel">
+    <label>Description de la dépense</label>
+    <input id="descriptionDepense"
+           placeholder="Ex : Livraison">
+
+    <label>Catégorie</label>
+    <select id="categorieDepense">
+      <option>Transport</option>
+      <option>Livraison</option>
+      <option>Publicité</option>
+      <option>Loyer</option>
+      <option>Autres</option>
+    </select>
+
+    <label>Montant en euros</label>
+    <input id="montantDepense"
+           type="number" min="0.01"
+           step="0.01">
+
+    <label>Date</label>
+    <input id="dateDepense" type="date">
+
+    <button onclick="ajouterDepense()">
+      Enregistrer la dépense
+    </button>
+  </div>
+
+  <div class="panel scroll"
+       id="listeDepenses"></div>
+</section>
 
 </main>
 <script>
