@@ -344,6 +344,73 @@ render=function(){
  });
 };
 
+// SHOPPILOT V7 - TABLEAU DE BORD
+function tableauV7(){
+ const ventes=get("ventes");
+ const produits=get("produits");
+ const zone=el("statistiques");
+ if(!zone)return;
+
+ const mois={};
+ ventes.forEach(v=>{
+  const d=new Date(v.date);
+  if(Number.isNaN(d.getTime()))return;
+  const cle=d.toISOString().slice(0,7);
+  mois[cle]=(mois[cle]||0)+(Number(v.total)||0);
+ });
+
+ const entrees=Object.entries(mois).sort((a,b)=>a[0].localeCompare(b[0]));
+ const maximum=Math.max(1,...entrees.map(x=>x[1]));
+ const faibles=produits.filter(p=>Number(p.stock)<=3);
+
+ const titre=document.createElement("h3");
+ titre.textContent="Chiffre d'affaires par mois";
+ zone.append(titre);
+
+ if(!entrees.length){
+  const vide=document.createElement("p");
+  vide.textContent="Aucune vente enregistrée.";
+  zone.append(vide);
+ }
+
+ entrees.forEach(([mois,total])=>{
+  const ligne=document.createElement("div");
+  ligne.style.margin="14px 0";
+
+  const libelle=document.createElement("p");
+  libelle.textContent=mois+" : "+money(total);
+
+  const fond=document.createElement("div");
+  fond.style.cssText="background:#e5ebf5;border-radius:8px;overflow:hidden;height:22px";
+
+  const barre=document.createElement("div");
+  barre.style.cssText="height:100%;background:#1673d1;border-radius:8px";
+  barre.style.width=(total/maximum*100)+"%";
+
+  fond.append(barre);
+  ligne.append(libelle,fond);
+  zone.append(ligne);
+ });
+
+ const alerte=document.createElement("h3");
+ alerte.textContent="Alertes de stock";
+ zone.append(alerte);
+
+ const info=document.createElement("p");
+ info.textContent=faibles.length
+  ?faibles.map(p=>p.nom+" : "+p.stock+" restant(s)").join(" | ")
+  :"Aucun produit en stock faible.";
+ zone.append(info);
+}
+
+const renderV6=render;
+render=function(){
+ renderV6();
+ tableauV7();
+};
+tableauV7();
+// FIN MODULE V7
+
   
 </script>
 </body>
