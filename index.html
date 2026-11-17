@@ -567,6 +567,21 @@ render = function() {
 };
 
 render();
+  
+
+function verifierStocksFaibles() {
+  const produits = get("produits", []);
+  const faibles = produits.filter(p =>
+    Number(p.stock ?? p.quantite ?? 0) <= 5
+  );
+
+  if (faibles.length === 0) {
+    alert("Tous les stocks sont suffisants.");
+  } else {
+    alert(faibles.length +
+      " produit(s) à vérifier dans le stock.");
+  }
+}
 
 </script>
 </body>
