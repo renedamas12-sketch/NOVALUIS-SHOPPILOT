@@ -3,259 +3,399 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ShopPilot - Tableau de bord</title>
+<meta name="viewport"
+ content="width=device-width, initial-scale=1">
+<title>ShopPilot - Gestion des stocks</title>
 <style>
 * { box-sizing: border-box; }
 body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f3f6fb;
-  color: #17243a;
+ margin: 0;
+ background: #f3f6fb;
+ color: #17243a;
+ font-family: Arial, sans-serif;
 }
 header {
-  background: #123b86;
-  color: white;
-  padding: 22px 16px;
+ background: #123b86;
+ color: white;
+ padding: 22px 16px;
 }
 header h1 { margin: 0; }
 header p { margin-bottom: 0; }
 main {
-  max-width: 850px;
-  margin: auto;
-  padding: 16px;
+ max-width: 900px;
+ margin: auto;
+ padding: 16px;
 }
 .cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+ display: grid;
+ grid-template-columns: repeat(2, 1fr);
+ gap: 12px;
 }
 .card, .panel {
-  background: white;
-  padding: 18px;
-  border-radius: 12px;
-  margin-bottom: 14px;
-  box-shadow: 0 2px 8px #0000000b;
+ background: white;
+ padding: 18px;
+ border-radius: 12px;
+ margin-bottom: 14px;
+ box-shadow: 0 2px 8px #0000000b;
 }
 .card strong {
-  font-size: 26px;
-  color: #123b86;
-}
-button {
-  background: #123b86;
-  color: white;
-  border: 0;
-  border-radius: 8px;
-  padding: 12px;
-  cursor: pointer;
+ font-size: 26px;
+ color: #123b86;
 }
 input {
-  width: 100%;
-  padding: 12px;
-  margin: 6px 0 12px;
-  border: 1px solid #ccd4e0;
-  border-radius: 8px;
+ width: 100%;
+ padding: 12px;
+ margin: 6px 0 12px;
+ border: 1px solid #ccd4e0;
+ border-radius: 8px;
+ font-size: 16px;
 }
+button {
+ background: #123b86;
+ color: white;
+ border: none;
+ border-radius: 8px;
+ padding: 12px;
+ cursor: pointer;
+ margin: 3px 3px 3px 0;
+}
+button.secondary { background: #475569; }
+button.danger { background: #b42318; }
 .item {
-  border-bottom: 1px solid #eee;
-  padding: 12px 0;
+ padding: 14px 0;
+ border-bottom: 1px solid #e2e8f0;
 }
-.item button { margin-top: 8px; }
+.item h3 { margin-bottom: 6px; }
+.alert {
+ color: #9a3412;
+ background: #ffedd5;
+ padding: 8px;
+ border-radius: 6px;
+}
+.ok { color: #166534; }
+small { color: #64748b; }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>ShopPilot</h1>
-  <p>Votre boutique, votre réussite.</p>
+<h1>ShopPilot</h1>
+<p>Votre boutique, votre réussite.</p>
 </header>
 
 <main>
 <section class="panel">
-  <h2>Ma boutique</h2>
-  <input id="boutique"
-    placeholder="Nom de votre boutique">
-  <button onclick="sauverBoutique()">
-    Enregistrer le nom
-  </button>
+<h2>Ma boutique</h2>
+<input id="boutique"
+ placeholder="Nom de votre boutique">
+<button onclick="sauverBoutique()">
+Enregistrer le nom
+</button>
 </section>
 
 <h2>Tableau de bord</h2>
 <div class="cards">
-  <div class="card">
-    <p>Ventes</p>
-    <strong id="ventes">0</strong>
-  </div>
-  <div class="card">
-    <p>Produits</p>
-    <strong id="produits">0</strong>
-  </div>
-  <div class="card">
-    <p>Commandes</p>
-    <strong id="commandes">0</strong>
-  </div>
-  <div class="card">
-    <p>Clients</p>
-    <strong id="clients">0</strong>
-  </div>
+<div class="card">
+<p>Ventes</p>
+<strong>0</strong>
+</div>
+<div class="card">
+<p>Produits</p>
+<strong id="produits">0</strong>
+</div>
+<div class="card">
+<p>Commandes</p>
+<strong>0</strong>
+</div>
+<div class="card">
+<p>Stocks faibles</p>
+<strong id="faibles">0</strong>
+</div>
 </div>
 
 <section class="panel">
-  <h2>Ajouter un produit</h2>
-  <form id="formProduit">
-    <input id="nom" placeholder="Nom du produit"
-      required maxlength="100">
-    <input id="prix" type="number"
-      placeholder="Prix" min="0.01"
-      step="0.01" required>
-    <input id="stock" type="number"
-      placeholder="Quantité en stock"
-      min="0" step="1" required>
-    <button type="submit">
-      Ajouter le produit
-    </button>
-  </form>
+<h2>Ajouter un produit</h2>
+<form id="formProduit">
+<label for="nom">Nom du produit</label>
+<input id="nom" required maxlength="100"
+ placeholder="Ex : Ordinateur HP">
+
+<label for="prix">Prix</label>
+<input id="prix" type="number"
+ min="0.01" step="0.01" required
+ placeholder="Ex : 350">
+
+<label for="stock">Quantité en stock</label>
+<input id="stock" type="number"
+ min="0" step="1" required
+ placeholder="Ex : 10">
+
+<button type="submit">Ajouter le produit</button>
+</form>
 </section>
 
 <section class="panel">
-  <h2>Mes produits</h2>
-  <div id="liste"></div>
+<h2>Mes produits</h2>
+<input id="recherche"
+ placeholder="Rechercher un produit">
+<div id="liste"></div>
 </section>
 
 <section class="panel">
-  <h2>Commandes et clients</h2>
-  <p>Ces fonctionnalités seront ajoutées
-  dans les prochaines étapes.</p>
+<h2>Prochaines fonctionnalités</h2>
+<p>Gestion des ventes, commandes et clients.</p>
 </section>
 </main>
 
 <script>
 const cle = "shoppilot_produits_v1";
+const cleBoutique = "shoppilot_boutique";
 let catalogue = [];
 
 try {
-  const donnees = JSON.parse(
-    localStorage.getItem(cle) || "[]"
-  );
-  catalogue = Array.isArray(donnees)
-    ? donnees : [];
-} catch (e) {
-  catalogue = [];
+ const donnees = JSON.parse(
+   localStorage.getItem(cle) || "[]"
+ );
+ catalogue = Array.isArray(donnees)
+   ? donnees : [];
+} catch (erreur) {
+ catalogue = [];
 }
 
-document.getElementById("boutique").value =
-  localStorage.getItem("shoppilot_boutique")
-  || "";
+const champBoutique =
+ document.getElementById("boutique");
+
+champBoutique.value =
+ localStorage.getItem(cleBoutique) || "";
 
 function sauverBoutique() {
-  const nom = document.getElementById(
-    "boutique"
-  ).value.trim();
-
-  if (!nom) {
-    alert("Entrez un nom de boutique.");
-    return;
-  }
-
-  localStorage.setItem(
-    "shoppilot_boutique", nom
-  );
+ const nom = champBoutique.value.trim();
+ if (!nom) {
+  alert("Saisissez le nom de la boutique.");
+  return;
+ }
+ try {
+  localStorage.setItem(cleBoutique, nom);
   alert("Nom enregistré !");
+ } catch (erreur) {
+  alert("Enregistrement impossible.");
+ }
+}
+
+function sauvegarder(nouveauCatalogue) {
+ try {
+  localStorage.setItem(
+   cle, JSON.stringify(nouveauCatalogue)
+  );
+  catalogue = nouveauCatalogue;
+  afficher();
+  return true;
+ } catch (erreur) {
+  alert("Impossible de sauvegarder.");
+  return false;
+ }
 }
 
 document.getElementById("formProduit")
-  .addEventListener("submit", function(e) {
-    e.preventDefault();
+ .addEventListener("submit", function(e) {
+ e.preventDefault();
 
-    const nom = document.getElementById(
-      "nom"
-    ).value.trim();
-    const prix = Number(
-      document.getElementById("prix").value
-    );
-    const stock = Number(
-      document.getElementById("stock").value
-    );
+ const nom = document.getElementById(
+  "nom"
+ ).value.trim();
+ const prix = Number(
+  document.getElementById("prix").value
+ );
+ const stock = Number(
+  document.getElementById("stock").value
+ );
 
-    if (!nom || !Number.isFinite(prix)
-      || prix <= 0
-      || !Number.isSafeInteger(stock)
-      || stock < 0) {
-      alert("Vérifiez les informations.");
-      return;
-    }
+ if (!nom || !Number.isFinite(prix)
+     || prix <= 0
+     || !Number.isSafeInteger(stock)
+     || stock < 0) {
+  alert("Vérifiez les informations.");
+  return;
+ }
 
-    catalogue.push({
-      id: Date.now() + "-" +
-        Math.random().toString(36).slice(2),
-      nom: nom,
-      prix: prix,
-      stock: stock
-    });
+ const produit = {
+  id: Date.now() + "-" +
+   Math.random().toString(36).slice(2),
+  nom: nom,
+  prix: prix,
+  stock: stock
+ };
 
-    enregistrer();
-    this.reset();
-  });
+ if (sauvegarder([...catalogue, produit])) {
+  this.reset();
+ }
+});
 
-function enregistrer() {
-  try {
-    localStorage.setItem(
-      cle, JSON.stringify(catalogue)
-    );
-    afficher();
-  } catch (e) {
-    alert("Enregistrement impossible.");
-  }
+function modifier(id) {
+ const p = catalogue.find(
+  produit => String(produit.id) === String(id)
+ );
+ if (!p) return;
+
+ const nouveauNom = prompt(
+  "Nom du produit :", p.nom
+ );
+ if (nouveauNom === null) return;
+
+ const nom = nouveauNom.trim();
+ if (!nom || nom.length > 100) {
+  alert("Nom invalide.");
+  return;
+ }
+
+ const nouveauPrix = prompt(
+  "Nouveau prix :", p.prix
+ );
+ if (nouveauPrix === null) return;
+
+ const prix = Number(nouveauPrix);
+ if (!nouveauPrix.trim()
+     || !Number.isFinite(prix)
+     || prix <= 0) {
+  alert("Prix invalide.");
+  return;
+ }
+
+ const nouveauStock = prompt(
+  "Nouvelle quantité :", p.stock
+ );
+ if (nouveauStock === null) return;
+
+ const stock = Number(nouveauStock);
+ if (!nouveauStock.trim()
+     || !Number.isSafeInteger(stock)
+     || stock < 0) {
+  alert("Quantité invalide.");
+  return;
+ }
+
+ const nouveauCatalogue = catalogue.map(
+  produit => String(produit.id) === String(id)
+   ? {...produit, nom, prix, stock}
+   : produit
+ );
+
+ sauvegarder(nouveauCatalogue);
+}
+
+function changerStock(id, variation) {
+ const p = catalogue.find(
+  produit => String(produit.id) === String(id)
+ );
+ if (!p) return;
+
+ const stock = Number(p.stock) + variation;
+ if (!Number.isSafeInteger(stock)
+     || stock < 0) {
+  alert("Quantité insuffisante ou invalide.");
+  return;
+ }
+
+ const nouveauCatalogue = catalogue.map(
+  produit => String(produit.id) === String(id)
+   ? {...produit, stock}
+   : produit
+ );
+ sauvegarder(nouveauCatalogue);
 }
 
 function supprimer(id) {
-  if (!confirm("Supprimer ce produit ?"))
-    return;
+ if (!confirm("Supprimer ce produit ?"))
+  return;
 
-  catalogue = catalogue.filter(
-    p => p.id !== id
-  );
-  enregistrer();
+ sauvegarder(catalogue.filter(
+  p => String(p.id) !== String(id)
+ ));
 }
 
 function afficher() {
-  document.getElementById(
-    "produits"
-  ).textContent = catalogue.length;
+ const liste = document.getElementById("liste");
+ const recherche = document.getElementById(
+  "recherche"
+ ).value.trim().toLowerCase();
 
-  const liste = document.getElementById(
-    "liste"
-  );
-  liste.replaceChildren();
+ document.getElementById(
+  "produits"
+ ).textContent = catalogue.length;
 
-  if (catalogue.length === 0) {
-    liste.textContent =
-      "Aucun produit pour le moment.";
-    return;
+ const faibles = catalogue.filter(
+  p => Number(p.stock) <= 5
+ ).length;
+
+ document.getElementById(
+  "faibles"
+ ).textContent = faibles;
+
+ liste.replaceChildren();
+
+ const resultats = catalogue.filter(
+  p => String(p.nom).toLowerCase()
+   .includes(recherche)
+ );
+
+ if (resultats.length === 0) {
+  liste.textContent = "Aucun produit trouvé.";
+  return;
+ }
+
+ resultats.forEach(p => {
+  const div = document.createElement("div");
+  div.className = "item";
+
+  const titre = document.createElement("h3");
+  titre.textContent = p.nom;
+
+  const details = document.createElement("p");
+  details.textContent =
+   "Prix : " + p.prix +
+   " | Stock : " + p.stock;
+
+  const statut = document.createElement("p");
+  if (Number(p.stock) === 0) {
+   statut.textContent = "Rupture de stock";
+   statut.className = "alert";
+  } else if (Number(p.stock) <= 5) {
+   statut.textContent = "Stock faible";
+   statut.className = "alert";
+  } else {
+   statut.textContent = "Stock disponible";
+   statut.className = "ok";
   }
 
-  catalogue.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "item";
+  function bouton(texte, action, classe) {
+   const b = document.createElement("button");
+   b.textContent = texte;
+   if (classe) b.className = classe;
+   b.addEventListener("click", action);
+   return b;
+  }
 
-    const titre = document.createElement("b");
-    titre.textContent = p.nom;
+  div.append(
+   titre,
+   details,
+   statut,
+   bouton("Modifier", () => modifier(p.id)),
+   bouton("+ Stock",
+    () => changerStock(p.id, 1)),
+   bouton("- Stock",
+    () => changerStock(p.id, -1),
+    "secondary"),
+   bouton("Supprimer",
+    () => supprimer(p.id),
+    "danger")
+  );
 
-    const details = document.createElement("p");
-    details.textContent =
-      "Prix : " + p.prix +
-      " | Stock : " + p.stock;
-
-    const bouton = document.createElement(
-      "button"
-    );
-    bouton.textContent = "Supprimer";
-    bouton.onclick = () => supprimer(p.id);
-
-    div.append(titre, details, bouton);
-    liste.appendChild(div);
-  });
+  liste.appendChild(div);
+ });
 }
+
+document.getElementById("recherche")
+ .addEventListener("input", afficher);
 
 afficher();
 </script>
