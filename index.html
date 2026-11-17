@@ -4,25 +4,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ShopPilot V4</title>
+<title>ShopPilot V5</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#17243a}
+body{margin:0;background:#f3f6fb;color:#17243a;font-family:Arial,sans-serif}
 header{background:#123b86;color:white;padding:22px 16px}
 header h1{margin:0}
-main{max-width:900px;margin:auto;padding:16px}
+main{max-width:950px;margin:auto;padding:16px}
 .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-.card,.panel{background:white;padding:18px;border-radius:12px;margin-bottom:14px;box-shadow:0 2px 8px #0000000b}
-.card strong{font-size:23px;color:#123b86;overflow-wrap:anywhere}
+.card,.panel{background:white;padding:17px;border-radius:12px;margin-bottom:14px;box-shadow:0 2px 8px #0000000b}
+.card strong{font-size:22px;color:#123b86;overflow-wrap:anywhere}
 input,select{width:100%;padding:12px;margin:6px 0 12px;border:1px solid #ccd4e0;border-radius:8px;font-size:16px}
-button{background:#123b86;color:white;border:0;border-radius:8px;padding:12px;margin:3px;cursor:pointer}
+button{background:#123b86;color:white;border:0;border-radius:8px;padding:11px;margin:3px;cursor:pointer}
 button:disabled{opacity:.5}
 .secondary{background:#475569}
 .danger{background:#b42318}
+.green{background:#15803d}
 .item{border-bottom:1px solid #e2e8f0;padding:12px 0}
 .alert{color:#9a3412;background:#ffedd5;padding:8px;border-radius:6px}
 .ok{color:#166534}
 small{color:#64748b}
+h2{font-size:20px}
 </style>
 </head>
 <body>
@@ -36,6 +38,16 @@ small{color:#64748b}
 <h2>Ma boutique</h2>
 <input id="boutique" placeholder="Nom de la boutique">
 <button onclick="sauverBoutique()">Enregistrer le nom</button>
+<h3>Monnaie d'affichage</h3>
+<select id="devise">
+<option value="EUR">Euro (€)</option>
+<option value="XAF">Franc CFA (FCFA)</option>
+<option value="USD">Dollar américain ($)</option>
+<option value="GBP">Livre sterling (£)</option>
+<option value="CAD">Dollar canadien (CAD)</option>
+<option value="CHF">Franc suisse (CHF)</option>
+</select>
+<p><small>Le changement de monnaie ne convertit pas les prix. Il change uniquement leur affichage.</small></p>
 </section>
 
 <h2>Tableau de bord</h2>
@@ -45,17 +57,25 @@ small{color:#64748b}
 <div class="card"><p>Produits</p><strong id="nbProduits">0</strong></div>
 <div class="card"><p>Stocks faibles</p><strong id="faibles">0</strong></div>
 <div class="card"><p>Clients</p><strong id="nbClients">0</strong></div>
-<div class="card"><p>Commandes</p><strong id="nbCommandes">0</strong></div>
+<div class="card"><p>Commandes actives</p><strong id="nbCommandes">0</strong></div>
 </div>
 
 <section class="panel">
-<h2>Enregistrer une vente</h2>
+<h2>Enregistrer une vente directe</h2>
 <form id="formVente">
 <label>Produit</label>
 <select id="produitVente" required></select>
-<label>Quantité vendue</label>
+<label>Quantité</label>
 <input id="quantiteVente" type="number" min="1" step="1" value="1" required>
-<button type="submit">Enregistrer la vente</button>
+<label>Moyen de paiement</label>
+<select id="paiementVente">
+<option>Espèces</option>
+<option>Carte bancaire</option>
+<option>Virement</option>
+<option>Mobile Money</option>
+<option>Autre</option>
+</select>
+<button type="submit">Enregistrer la vente payée</button>
 </form>
 </section>
 
@@ -99,93 +119,126 @@ small{color:#64748b}
 <input id="quantiteCommande" type="number" min="1" step="1" value="1" required>
 <button type="submit">Créer la commande</button>
 </form>
-<p><small>La commande réserve le stock. Elle n'est pas comptée comme une vente.</small></p>
+<p><small>La création réserve le stock. La commande n'entre dans le chiffre d'affaires qu'après validation du paiement.</small></p>
 </section>
 
 <section class="panel">
-<h2>Suivi des commandes</h2>
+<h2>Suivi des commandes et paiements</h2>
 <div id="listeCommandes"></div>
 </section>
 
 <section class="panel">
-<h2>Historique des ventes</h2>
+<h2>Historique des ventes et reçus</h2>
 <div id="historique"></div>
 </section>
-</main>
 
+</main>
 <script>
 const KP="shoppilot_produits_v1";
 const KV="shoppilot_ventes_v1";
 const KB="shoppilot_boutique";
 const KC="shoppilot_clients_v1";
 const KO="shoppilot_commandes_v1";
+const KD="shoppilot_devise_v1";
 
-function charger(cle){
+const el=id=>document.getElementById(id);
+const uid=()=>Date.now()+"-"+Math.random().toString(36).slice(2);
+const entier=n=>Number.isSafeInteger(n)&&n>=0;
+const validePrix=n=>Number.isFinite(n)&&n>0&&Number.isSafeInteger(Math.round(n*100));
+const egal=(a,b)=>String(a)===String(b);
+
+function charger(k){
  try{
-  const d=JSON.parse(localStorage.getItem(cle)||"[]");
-  return Array.isArray(d)?d:[];
+  const v=JSON.parse(localStorage.getItem(k)||"[]");
+  return Array.isArray(v)?v:[];
  }catch(e){return []}
 }
+
 let produits=charger(KP);
 let ventes=charger(KV);
 let clients=charger(KC);
 let commandes=charger(KO);
+let devise=localStorage.getItem(KD)||"EUR";
 
-const el=id=>document.getElementById(id);
-const idUnique=()=>Date.now()+"-"+Math.random().toString(36).slice(2);
-const argent=n=>Number(n).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
-const entier=n=>Number.isSafeInteger(n)&&n>=0;
-const montant=n=>Number.isFinite(n)&&n>0&&Number.isSafeInteger(Math.round(n*100));
-
+if(!["EUR","XAF","USD","GBP","CAD","CHF"].includes(devise))devise="EUR";
+el("devise").value=devise;
 el("boutique").value=localStorage.getItem(KB)||"";
-function sauverBoutique(){
- const nom=el("boutique").value.trim();
- if(!nom)return alert("Saisissez un nom.");
- try{localStorage.setItem(KB,nom);alert("Nom enregistré !")}
- catch(e){alert("Enregistrement impossible.")}
+
+function argent(n,d=devise){
+ try{
+  return new Intl.NumberFormat("fr-FR",{
+   style:"currency",currency:d
+  }).format(Number(n)||0);
+ }catch(e){return String(n)+" "+d}
 }
 
-function sauver(changements){
- const anciens={};
- const ecrits=[];
+function enregistrer(paires){
+ const anciens=[];
  try{
-  for(const [cle] of changements)anciens[cle]=localStorage.getItem(cle);
-  for(const [cle,valeur] of changements){
-   localStorage.setItem(cle,JSON.stringify(valeur));
-   ecrits.push(cle);
-  }
+  for(const [k] of paires)anciens.push([k,localStorage.getItem(k)]);
+  for(const [k,v] of paires)localStorage.setItem(k,JSON.stringify(v));
   return true;
  }catch(e){
-  for(const cle of ecrits.reverse()){
+  for(const [k,v] of anciens){
    try{
-    if(anciens[cle]===null)localStorage.removeItem(cle);
-    else localStorage.setItem(cle,anciens[cle]);
+    if(v===null)localStorage.removeItem(k);
+    else localStorage.setItem(k,v);
    }catch(err){}
   }
-  alert("Sauvegarde impossible. Vérifiez les données.");
+  alert("Sauvegarde impossible.");
   return false;
  }
 }
-function majProduits(n){
- if(sauver([[KP,n]])){produits=n;afficher();return true}
- return false;
+
+function sauverBoutique(){
+ const n=el("boutique").value.trim();
+ if(!n)return alert("Indiquez le nom.");
+ try{
+  localStorage.setItem(KB,n);
+  alert("Nom enregistré.");
+ }catch(e){alert("Enregistrement impossible.")}
 }
-function bouton(t,action,classe){
+
+el("devise").onchange=function(){
+ const nouvelle=this.value;
+ if(nouvelle===devise)return;
+ if(!confirm("Changer seulement le symbole monétaire, sans convertir les montants ?")){
+  this.value=devise;return;
+ }
+ try{
+  localStorage.setItem(KD,nouvelle);
+  devise=nouvelle;
+  afficher();
+ }catch(e){
+  this.value=devise;
+  alert("Impossible d'enregistrer la monnaie.");
+ }
+};
+
+function bouton(t,fn,classe=""){
  const b=document.createElement("button");
  b.textContent=t;
- if(classe)b.className=classe;
- b.onclick=action;
+ b.className=classe;
+ b.onclick=fn;
  return b;
 }
-function ligne(titre,details){
+
+function ligne(titre,description){
  const d=document.createElement("div");
  d.className="item";
  const h=document.createElement("h3");
  h.textContent=titre;
  const p=document.createElement("p");
- p.textContent=details;
+ p.textContent=description;
  d.append(h,p);
  return d;
+}
+
+function majProduits(n){
+ if(enregistrer([[KP,n]])){
+  produits=n;afficher();return true;
+ }
+ return false;
 }
 
 el("formProduit").onsubmit=function(e){
@@ -193,53 +246,72 @@ el("formProduit").onsubmit=function(e){
  const nom=el("nom").value.trim();
  const prix=Number(el("prix").value);
  const stock=Number(el("stock").value);
- if(!nom||!montant(prix)||!entier(stock))return alert("Produit invalide.");
- if(majProduits([...produits,{id:idUnique(),nom,prix,stock}]))this.reset();
+ if(!nom||!validePrix(prix)||!entier(stock))
+  return alert("Produit invalide.");
+ if(majProduits([...produits,{id:uid(),nom,prix,stock}]))
+  this.reset();
 };
 
 function modifierProduit(id){
- const p=produits.find(x=>String(x.id)===String(id));
+ const p=produits.find(x=>egal(x.id,id));
  if(!p)return;
- const n=prompt("Nom :",p.nom);
- if(n===null)return;
- const nom=n.trim();
- if(!nom||nom.length>100)return alert("Nom invalide.");
+ const nom=prompt("Nom :",p.nom);
+ if(nom===null)return;
+ if(!nom.trim()||nom.trim().length>100)
+  return alert("Nom invalide.");
  const pr=prompt("Prix :",p.prix);
  if(pr===null)return;
  const prix=Number(pr);
- if(!pr.trim()||!montant(prix))return alert("Prix invalide.");
+ if(!pr.trim()||!validePrix(prix))
+  return alert("Prix invalide.");
  const st=prompt("Stock :",p.stock);
  if(st===null)return;
  const stock=Number(st);
- if(!st.trim()||!entier(stock))return alert("Stock invalide.");
- majProduits(produits.map(x=>String(x.id)===String(id)?{...x,nom,prix,stock}:x));
+ if(!st.trim()||!entier(stock))
+  return alert("Stock invalide.");
+ majProduits(produits.map(x=>egal(x.id,id)?
+  {...x,nom:nom.trim(),prix,stock}:x));
 }
-function changerStock(id,n){
- const p=produits.find(x=>String(x.id)===String(id));
+
+function changerStock(id,diff){
+ const p=produits.find(x=>egal(x.id,id));
  if(!p)return;
- const stock=Number(p.stock)+n;
- if(!entier(stock))return alert("Stock insuffisant.");
- majProduits(produits.map(x=>String(x.id)===String(id)?{...x,stock}:x));
+ const stock=Number(p.stock)+diff;
+ if(!entier(stock))return alert("Stock invalide.");
+ majProduits(produits.map(x=>egal(x.id,id)?
+  {...x,stock}:x));
 }
+
 function supprimerProduit(id){
+ if(commandes.some(c=>egal(c.produitId,id)&&
+  !["Annulée","Payée"].includes(c.statut)))
+  return alert("Ce produit a une commande active.");
  if(!confirm("Supprimer ce produit ?"))return;
- majProduits(produits.filter(x=>String(x.id)!==String(id)));
+ majProduits(produits.filter(x=>!egal(x.id,id)));
 }
 
 el("formVente").onsubmit=function(e){
  e.preventDefault();
  const id=el("produitVente").value;
  const q=Number(el("quantiteVente").value);
- const p=produits.find(x=>String(x.id)===id);
- if(!p||!entier(q)||q===0||q>Number(p.stock))return alert("Stock insuffisant ou quantité invalide.");
+ const p=produits.find(x=>egal(x.id,id));
+ if(!p||!entier(q)||q<1||q>Number(p.stock))
+  return alert("Stock ou quantité invalide.");
  const total=Math.round(Number(p.prix)*q*100)/100;
- if(!montant(total))return alert("Montant invalide.");
- const v={id:idUnique(),produit:p.nom,quantite:q,prix:Number(p.prix),total,date:new Date().toISOString()};
- const np=produits.map(x=>String(x.id)===id?{...x,stock:Number(x.stock)-q}:x);
+ if(!validePrix(total))return alert("Montant invalide.");
+ const v={
+  id:uid(),produit:p.nom,quantite:q,
+  prix:Number(p.prix),total,
+  date:new Date().toISOString(),
+  paiement:el("paiementVente").value,
+  devise,source:"Vente directe"
+ };
+ const np=produits.map(x=>egal(x.id,id)?
+  {...x,stock:Number(x.stock)-q}:x);
  const nv=[...ventes,v];
- if(sauver([[KP,np],[KV,nv]])){
+ if(enregistrer([[KP,np],[KV,nv]])){
   produits=np;ventes=nv;this.reset();afficher();
-  alert("Vente enregistrée !");
+  alert("Vente payée enregistrée !");
  }
 };
 
@@ -247,12 +319,20 @@ el("formClient").onsubmit=function(e){
  e.preventDefault();
  const nom=el("nomClient").value.trim();
  if(!nom)return alert("Nom obligatoire.");
- const c={id:idUnique(),nom,telephone:el("telClient").value.trim(),email:el("emailClient").value.trim(),adresse:el("adresseClient").value.trim()};
+ const c={
+  id:uid(),nom,
+  telephone:el("telClient").value.trim(),
+  email:el("emailClient").value.trim(),
+  adresse:el("adresseClient").value.trim()
+ };
  const nc=[...clients,c];
- if(sauver([[KC,nc]])){clients=nc;this.reset();afficher()}
+ if(enregistrer([[KC,nc]])){
+  clients=nc;this.reset();afficher();
+ }
 };
+
 function modifierClient(id){
- const c=clients.find(x=>x.id===id);
+ const c=clients.find(x=>egal(x.id,id));
  if(!c)return;
  const nom=prompt("Nom :",c.nom);
  if(nom===null)return;
@@ -263,14 +343,23 @@ function modifierClient(id){
  if(email===null)return;
  const adresse=prompt("Adresse :",c.adresse||"");
  if(adresse===null)return;
- const nc=clients.map(x=>x.id===id?{...x,nom:nom.trim(),telephone:tel.trim(),email:email.trim(),adresse:adresse.trim()}:x);
- if(sauver([[KC,nc]])){clients=nc;afficher()}
+ const nc=clients.map(x=>egal(x.id,id)?{
+  ...x,nom:nom.trim(),telephone:tel.trim(),
+  email:email.trim(),adresse:adresse.trim()
+ }:x);
+ if(enregistrer([[KC,nc]])){
+  clients=nc;afficher();
+ }
 }
+
 function supprimerClient(id){
- if(commandes.some(x=>x.clientId===id))return alert("Ce client possède des commandes. Conservez sa fiche.");
+ if(commandes.some(x=>egal(x.clientId,id)))
+  return alert("Ce client possède des commandes.");
  if(!confirm("Supprimer ce client ?"))return;
- const nc=clients.filter(x=>x.id!==id);
- if(sauver([[KC,nc]])){clients=nc;afficher()}
+ const nc=clients.filter(x=>!egal(x.id,id));
+ if(enregistrer([[KC,nc]])){
+  clients=nc;afficher();
+ }
 }
 
 el("formCommande").onsubmit=function(e){
@@ -278,41 +367,86 @@ el("formCommande").onsubmit=function(e){
  const clientId=el("clientCommande").value;
  const produitId=el("produitCommande").value;
  const q=Number(el("quantiteCommande").value);
- const c=clients.find(x=>x.id===clientId);
- const p=produits.find(x=>String(x.id)===produitId);
- if(!c||!p||!entier(q)||q===0||q>Number(p.stock))return alert("Client, produit ou stock invalide.");
+ const c=clients.find(x=>egal(x.id,clientId));
+ const p=produits.find(x=>egal(x.id,produitId));
+ if(!c||!p||!entier(q)||q<1||q>Number(p.stock))
+  return alert("Client, produit ou stock invalide.");
  const total=Math.round(Number(p.prix)*q*100)/100;
- if(!montant(total))return alert("Montant invalide.");
+ if(!validePrix(total))return alert("Montant invalide.");
  const commande={
-  id:idUnique(),clientId,client:c.nom,produitId:String(p.id),
-  produit:p.nom,quantite:q,prix:Number(p.prix),total,
-  statut:"En attente",date:new Date().toISOString()
+  id:uid(),clientId,client:c.nom,
+  produitId:String(p.id),produit:p.nom,
+  quantite:q,prix:Number(p.prix),total,
+  devise,statut:"En attente",
+  date:new Date().toISOString()
  };
- const np=produits.map(x=>String(x.id)===produitId?{...x,stock:Number(x.stock)-q}:x);
+ const np=produits.map(x=>egal(x.id,produitId)?
+  {...x,stock:Number(x.stock)-q}:x);
  const nc=[...commandes,commande];
- if(sauver([[KP,np],[KO,nc]])){
+ if(enregistrer([[KP,np],[KO,nc]])){
   produits=np;commandes=nc;this.reset();afficher();
-  alert("Commande créée et stock réservé !");
+  alert("Commande créée. Stock réservé !");
  }
 };
 
 function changerStatut(id,statut){
- const autorises=["En attente","En préparation","Expédiée","Livrée"];
+ const autorises=[
+  "En attente","En préparation","Expédiée","Livrée"
+ ];
  if(!autorises.includes(statut))return;
- const nc=commandes.map(x=>x.id===id?{...x,statut}:x);
- if(sauver([[KO,nc]])){commandes=nc;afficher()}
+ const c=commandes.find(x=>egal(x.id,id));
+ if(!c||["Annulée","Payée"].includes(c.statut))return;
+ const nc=commandes.map(x=>egal(x.id,id)?
+  {...x,statut}:x);
+ if(enregistrer([[KO,nc]])){
+  commandes=nc;afficher();
+ }
 }
+
 function annulerCommande(id){
- const c=commandes.find(x=>x.id===id);
- if(!c||c.statut==="Annulée")return;
- if(!confirm("Annuler la commande et remettre le stock ?"))return;
- const p=produits.find(x=>String(x.id)===c.produitId);
- if(!p)return alert("Produit supprimé : restauration automatique impossible.");
+ const c=commandes.find(x=>egal(x.id,id));
+ if(!c||["Annulée","Payée","Livrée"].includes(c.statut))
+  return alert("Annulation impossible.");
+ if(!confirm("Annuler et remettre le stock ?"))return;
+ const p=produits.find(x=>egal(x.id,c.produitId));
+ if(!p)return alert("Produit introuvable.");
  const stock=Number(p.stock)+Number(c.quantite);
  if(!entier(stock))return alert("Stock invalide.");
- const np=produits.map(x=>String(x.id)===c.produitId?{...x,stock}:x);
- const nc=commandes.map(x=>x.id===id?{...x,statut:"Annulée"}:x);
- if(sauver([[KP,np],[KO,nc]])){produits=np;commandes=nc;afficher()}
+ const np=produits.map(x=>egal(x.id,c.produitId)?
+  {...x,stock}:x);
+ const nc=commandes.map(x=>egal(x.id,id)?
+  {...x,statut:"Annulée"}:x);
+ if(enregistrer([[KP,np],[KO,nc]])){
+  produits=np;commandes=nc;afficher();
+ }
+}
+
+function payerCommande(id,methode){
+ const c=commandes.find(x=>egal(x.id,id));
+ if(!c||c.statut!=="Livrée")return;
+ if(ventes.some(v=>egal(v.commandeId,c.id)))
+  return alert("Cette commande est déjà enregistrée comme vente.");
+ if(!confirm("Confirmer que le paiement a réellement été reçu ?"))
+  return;
+ const total=Number(c.total);
+ if(!validePrix(total))return alert("Montant invalide.");
+ const v={
+  id:uid(),commandeId:c.id,
+  produit:c.produit,quantite:c.quantite,
+  prix:Number(c.prix),total,
+  date:new Date().toISOString(),
+  paiement:methode,devise:c.devise||devise,
+  client:c.client,source:"Commande"
+ };
+ const nc=commandes.map(x=>egal(x.id,id)?
+  {...x,statut:"Payée",paiement:methode,
+   datePaiement:v.date}:x);
+ const nv=[...ventes,v];
+ // Le stock est déjà réservé : ne pas le retirer encore.
+ if(enregistrer([[KO,nc],[KV,nv]])){
+  commandes=nc;ventes=nv;afficher();
+  alert("Paiement enregistré sans retirer le stock deux fois !");
+ }
 }
 
 function remplirSelect(id,donnees,texte){
@@ -320,97 +454,190 @@ function remplirSelect(id,donnees,texte){
  s.replaceChildren();
  donnees.forEach(x=>{
   const o=document.createElement("option");
-  o.value=String(x.id);o.textContent=texte(x);s.append(o);
+  o.value=String(x.id);
+  o.textContent=texte(x);
+  s.append(o);
  });
- if(donnees.some(x=>String(x.id)===ancien))s.value=ancien;
+ if(donnees.some(x=>egal(x.id,ancien)))s.value=ancien;
  if(!donnees.length){
   const o=document.createElement("option");
-  o.value="";o.textContent="Aucune option disponible";s.append(o);
+  o.value="";o.textContent="Aucune option disponible";
+  s.append(o);
  }
 }
+
+function afficherProduits(){
+ const l=el("liste");l.replaceChildren();
+ const recherche=el("recherche").value.toLowerCase();
+ const items=produits.filter(x=>
+  String(x.nom).toLowerCase().includes(recherche));
+ if(!items.length){l.textContent="Aucun produit.";return}
+ items.forEach(p=>{
+  const d=ligne(p.nom,
+   "Prix : "+argent(p.prix)+" | Stock : "+p.stock);
+  if(Number(p.stock)<=5){
+   const a=document.createElement("p");
+   a.className="alert";
+   a.textContent=Number(p.stock)===0?
+    "Rupture de stock":"Stock faible";
+   d.append(a);
+  }
+  d.append(
+   bouton("Modifier",()=>modifierProduit(p.id)),
+   bouton("+ Stock",()=>changerStock(p.id,1)),
+   bouton("- Stock",()=>changerStock(p.id,-1),"secondary"),
+   bouton("Supprimer",()=>supprimerProduit(p.id),"danger")
+  );
+  l.append(d);
+ });
+}
+
+function afficherClients(){
+ const l=el("listeClients");l.replaceChildren();
+ const r=el("rechercheClient").value.toLowerCase();
+ const items=clients.filter(x=>
+  String(x.nom).toLowerCase().includes(r));
+ if(!items.length){l.textContent="Aucun client.";return}
+ items.forEach(c=>{
+  const d=ligne(c.nom,
+   [c.telephone,c.email,c.adresse].filter(Boolean).join(" | "));
+  d.append(
+   bouton("Modifier",()=>modifierClient(c.id)),
+   bouton("Supprimer",()=>supprimerClient(c.id),"danger")
+  );
+  l.append(d);
+ });
+}
+
+function afficherCommandes(){
+ const l=el("listeCommandes");l.replaceChildren();
+ if(!commandes.length){l.textContent="Aucune commande.";return}
+ [...commandes].reverse().forEach(c=>{
+  const d=ligne(c.client+" - "+c.produit,
+   "Quantité : "+c.quantite+
+   " | Total : "+argent(c.total,c.devise||devise)+
+   " | Statut : "+c.statut);
+  const date=document.createElement("small");
+  date.textContent=new Date(c.date).toLocaleString("fr-FR");
+  d.append(date);
+  if(!["Annulée","Payée"].includes(c.statut)){
+   const s=document.createElement("select");
+   ["En attente","En préparation","Expédiée","Livrée"]
+    .forEach(st=>{
+     const o=document.createElement("option");
+     o.value=st;o.textContent=st;s.append(o);
+    });
+   s.value=c.statut;
+   s.onchange=()=>changerStatut(c.id,s.value);
+   d.append(s);
+   if(c.statut==="Livrée"){
+    const m=document.createElement("select");
+    ["Espèces","Carte bancaire","Virement",
+     "Mobile Money","Autre"].forEach(x=>{
+      const o=document.createElement("option");
+      o.value=x;o.textContent=x;m.append(o);
+     });
+    d.append(m);
+    d.append(bouton("Valider le paiement",
+     ()=>payerCommande(c.id,m.value),"green"));
+   }else{
+    d.append(bouton("Annuler",
+     ()=>annulerCommande(c.id),"danger"));
+   }
+  }
+  l.append(d);
+ });
+}
+
+function imprimerRecu(v){
+ const w=window.open("","_blank");
+ if(!w){
+  alert("Autorisez les fenêtres contextuelles pour imprimer.");
+  return;
+ }
+ const doc=w.document;
+ doc.title="Reçu ShopPilot";
+ const style=doc.createElement("style");
+ style.textContent="body{font-family:Arial;padding:30px;max-width:650px;margin:auto}h1{color:#123b86}p{line-height:1.7}";
+ doc.head.append(style);
+ const h=doc.createElement("h1");
+ h.textContent=localStorage.getItem(KB)||"ShopPilot";
+ doc.body.append(h);
+ const titre=doc.createElement("h2");
+ titre.textContent="Reçu de paiement";
+ doc.body.append(titre);
+ const lignes=[
+  ["Référence",String(v.id)],
+  ["Date",new Date(v.date).toLocaleString("fr-FR")],
+  ["Client",v.client||"Client comptoir"],
+  ["Produit",v.produit],
+  ["Quantité",v.quantite],
+  ["Prix unitaire",argent(v.prix,v.devise||devise)],
+  ["Total payé",argent(v.total,v.devise||devise)],
+  ["Paiement",v.paiement||"Non renseigné"]
+ ];
+ lignes.forEach(([a,b])=>{
+  const p=doc.createElement("p");
+  const strong=doc.createElement("strong");
+  strong.textContent=a+" : ";
+  p.append(strong,doc.createTextNode(String(b)));
+  doc.body.append(p);
+ });
+ const note=doc.createElement("p");
+ note.textContent="Reçu simple de paiement — ne constitue pas une facture fiscale conforme.";
+ doc.body.append(note);
+ const btn=doc.createElement("button");
+ btn.textContent="Imprimer / Enregistrer en PDF";
+ btn.onclick=()=>w.print();
+ doc.body.append(btn);
+}
+
+function afficherVentes(){
+ const l=el("historique");l.replaceChildren();
+ if(!ventes.length){l.textContent="Aucune vente.";return}
+ [...ventes].reverse().forEach(v=>{
+  const d=ligne(v.produit,
+   "Quantité : "+v.quantite+
+   " | Total : "+argent(v.total,v.devise||devise)+
+   " | Paiement : "+(v.paiement||"Non renseigné"));
+  const date=document.createElement("small");
+  date.textContent=new Date(v.date).toLocaleString("fr-FR");
+  d.append(date);
+  d.append(bouton("Voir / imprimer le reçu",
+   ()=>imprimerRecu(v),"secondary"));
+  l.append(d);
+ });
+}
+
 function afficher(){
  el("nbProduits").textContent=produits.length;
  el("nbVentes").textContent=ventes.length;
  el("nbClients").textContent=clients.length;
- el("nbCommandes").textContent=commandes.filter(x=>x.statut!=="Annulée").length;
- el("faibles").textContent=produits.filter(x=>Number(x.stock)<=5).length;
- el("ca").textContent=argent(ventes.reduce((s,v)=>s+Number(v.total),0));
+ el("nbCommandes").textContent=commandes.filter(x=>
+  !["Annulée","Payée"].includes(x.statut)).length;
+ el("faibles").textContent=produits.filter(x=>
+  Number(x.stock)<=5).length;
+ el("ca").textContent=argent(ventes.reduce((s,v)=>
+  s+Number(v.total||0),0));
 
  const disponibles=produits.filter(x=>Number(x.stock)>0);
- remplirSelect("produitVente",disponibles,x=>x.nom+" - Stock : "+x.stock);
- remplirSelect("produitCommande",disponibles,x=>x.nom+" - Stock : "+x.stock);
+ remplirSelect("produitVente",disponibles,
+  x=>x.nom+" - Stock : "+x.stock);
+ remplirSelect("produitCommande",disponibles,
+  x=>x.nom+" - Stock : "+x.stock);
  remplirSelect("clientCommande",clients,x=>x.nom);
- el("formVente").querySelector("button").disabled=!disponibles.length;
- el("formCommande").querySelector("button").disabled=!disponibles.length||!clients.length;
 
- afficherProduits();afficherClients();afficherCommandes();afficherVentes();
+ el("formVente").querySelector("button").disabled=
+  !disponibles.length;
+ el("formCommande").querySelector("button").disabled=
+  !disponibles.length||!clients.length;
+
+ afficherProduits();
+ afficherClients();
+ afficherCommandes();
+ afficherVentes();
 }
-function afficherProduits(){
- const liste=el("liste");liste.replaceChildren();
- const recherche=el("recherche").value.toLowerCase();
- const resultats=produits.filter(x=>String(x.nom).toLowerCase().includes(recherche));
- if(!resultats.length){liste.textContent="Aucun produit trouvé.";return}
- resultats.forEach(p=>{
-  const d=ligne(p.nom,"Prix : "+argent(p.prix)+" | Stock : "+p.stock);
-  const statut=document.createElement("p");
-  statut.textContent=Number(p.stock)===0?"Rupture de stock":Number(p.stock)<=5?"Stock faible":"Stock disponible";
-  statut.className=Number(p.stock)<=5?"alert":"ok";
-  d.append(statut,
-   bouton("Modifier",()=>modifierProduit(p.id)),
-   bouton("+ Stock",()=>changerStock(p.id,1)),
-   bouton("- Stock",()=>changerStock(p.id,-1),"secondary"),
-   bouton("Supprimer",()=>supprimerProduit(p.id),"danger"));
-  liste.append(d);
- });
-}
-function afficherClients(){
- const liste=el("listeClients");liste.replaceChildren();
- const recherche=el("rechercheClient").value.toLowerCase();
- const resultats=clients.filter(x=>x.nom.toLowerCase().includes(recherche));
- if(!resultats.length){liste.textContent="Aucun client trouvé.";return}
- resultats.forEach(c=>{
-  const d=ligne(c.nom,[c.telephone,c.email,c.adresse].filter(Boolean).join(" | "));
-  d.append(
-   bouton("Modifier",()=>modifierClient(c.id)),
-   bouton("Supprimer",()=>supprimerClient(c.id),"danger"));
-  liste.append(d);
- });
-}
-function afficherCommandes(){
- const liste=el("listeCommandes");liste.replaceChildren();
- if(!commandes.length){liste.textContent="Aucune commande.";return}
- [...commandes].reverse().forEach(c=>{
-  const d=ligne(c.client+" - "+c.produit,
-   "Quantité : "+c.quantite+" | Total : "+argent(c.total)+" | Statut : "+c.statut);
-  const date=document.createElement("small");
-  date.textContent=new Date(c.date).toLocaleString("fr-FR");
-  d.append(date);
-  if(c.statut!=="Annulée"){
-   const s=document.createElement("select");
-   ["En attente","En préparation","Expédiée","Livrée"].forEach(st=>{
-    const o=document.createElement("option");
-    o.value=st;o.textContent=st;s.append(o);
-   });
-   s.value=c.statut;
-   s.onchange=()=>changerStatut(c.id,s.value);
-   d.append(s);
-   if(c.statut!=="Livrée")
-    d.append(bouton("Annuler",()=>annulerCommande(c.id),"danger"));
-  }
-  liste.append(d);
- });
-}
-function afficherVentes(){
- const liste=el("historique");liste.replaceChildren();
- if(!ventes.length){liste.textContent="Aucune vente enregistrée.";return}
- [...ventes].reverse().forEach(v=>{
-  const d=ligne(v.produit,
-   "Quantité : "+v.quantite+" | Total : "+argent(v.total));
-  const date=document.createElement("small");
-  date.textContent=new Date(v.date).toLocaleString("fr-FR");
-  d.append(date);liste.append(d);
- });
-}
+
 el("recherche").oninput=afficherProduits;
 el("rechercheClient").oninput=afficherClients;
 afficher();
