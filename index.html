@@ -5,14 +5,14 @@
 <meta charset="UTF-8">
 <meta name="viewport"
  content="width=device-width, initial-scale=1">
-<title>ShopPilot - Gestion des stocks</title>
+<title>ShopPilot V3 - Gestion commerciale</title>
 <style>
 * { box-sizing: border-box; }
 body {
  margin: 0;
+ font-family: Arial, sans-serif;
  background: #f3f6fb;
  color: #17243a;
- font-family: Arial, sans-serif;
 }
 header {
  background: #123b86;
@@ -39,10 +39,11 @@ main {
  box-shadow: 0 2px 8px #0000000b;
 }
 .card strong {
- font-size: 26px;
+ font-size: 23px;
  color: #123b86;
+ overflow-wrap: anywhere;
 }
-input {
+input, select {
  width: 100%;
  padding: 12px;
  margin: 6px 0 12px;
@@ -56,11 +57,15 @@ button {
  border: none;
  border-radius: 8px;
  padding: 12px;
- cursor: pointer;
  margin: 3px 3px 3px 0;
+ cursor: pointer;
 }
-button.secondary { background: #475569; }
-button.danger { background: #b42318; }
+button:disabled {
+ opacity: .5;
+ cursor: not-allowed;
+}
+.secondary { background: #475569; }
+.danger { background: #b42318; }
 .item {
  padding: 14px 0;
  border-bottom: 1px solid #e2e8f0;
@@ -84,6 +89,7 @@ small { color: #64748b; }
 </header>
 
 <main>
+
 <section class="panel">
 <h2>Ma boutique</h2>
 <input id="boutique"
@@ -96,16 +102,16 @@ Enregistrer le nom
 <h2>Tableau de bord</h2>
 <div class="cards">
 <div class="card">
+<p>Chiffre d'affaires</p>
+<strong id="ca">0</strong>
+</div>
+<div class="card">
 <p>Ventes</p>
-<strong>0</strong>
+<strong id="nbVentes">0</strong>
 </div>
 <div class="card">
 <p>Produits</p>
-<strong id="produits">0</strong>
-</div>
-<div class="card">
-<p>Commandes</p>
-<strong>0</strong>
+<strong id="nbProduits">0</strong>
 </div>
 <div class="card">
 <p>Stocks faibles</p>
@@ -114,13 +120,29 @@ Enregistrer le nom
 </div>
 
 <section class="panel">
+<h2>Enregistrer une vente</h2>
+<form id="formVente">
+<label for="produitVente">Produit</label>
+<select id="produitVente" required></select>
+
+<label for="quantiteVente">Quantité vendue</label>
+<input id="quantiteVente" type="number"
+ min="1" step="1" value="1" required>
+
+<button type="submit">
+Enregistrer la vente
+</button>
+</form>
+</section>
+
+<section class="panel">
 <h2>Ajouter un produit</h2>
 <form id="formProduit">
 <label for="nom">Nom du produit</label>
 <input id="nom" required maxlength="100"
  placeholder="Ex : Ordinateur HP">
 
-<label for="prix">Prix</label>
+<label for="prix">Prix de vente</label>
 <input id="prix" type="number"
  min="0.01" step="0.01" required
  placeholder="Ex : 350">
@@ -142,25 +164,33 @@ Enregistrer le nom
 </section>
 
 <section class="panel">
-<h2>Prochaines fonctionnalités</h2>
-<p>Gestion des ventes, commandes et clients.</p>
+<h2>Historique des ventes</h2>
+<div id="historique"></div>
 </section>
+
 </main>
 
 <script>
-const cle = "shoppilot_produits_v1";
+const cleProduits = "shoppilot_produits_v1";
+const cleVentes = "shoppilot_ventes_v1";
 const cleBoutique = "shoppilot_boutique";
-let catalogue = [];
 
-try {
- const donnees = JSON.parse(
+let catalogue = [];
+let ventes = [];
+
+function charger(cle) {
+ try {
+  const donnees = JSON.parse(
    localStorage.getItem(cle) || "[]"
- );
- catalogue = Array.isArray(donnees)
-   ? donnees : [];
-} catch (erreur) {
- catalogue = [];
+  );
+  return Array.isArray(donnees) ? donnees : [];
+ } catch (e) {
+  return [];
+ }
 }
+
+catalogue = charger(cleProduits);
+ventes = charger(cleVentes);
 
 const champBoutique =
  document.getElementById("boutique");
@@ -171,27 +201,35 @@ champBoutique.value =
 function sauverBoutique() {
  const nom = champBoutique.value.trim();
  if (!nom) {
-  alert("Saisissez le nom de la boutique.");
+  alert("Saisissez un nom de boutique.");
   return;
  }
  try {
   localStorage.setItem(cleBoutique, nom);
   alert("Nom enregistré !");
- } catch (erreur) {
+ } catch (e) {
   alert("Enregistrement impossible.");
  }
 }
 
-function sauvegarder(nouveauCatalogue) {
+function argent(montant) {
+ return Number(montant).toLocaleString(
+  "fr-FR",
+  {minimumFractionDigits: 2,
+   maximumFractionDigits: 2}
+ );
+}
+
+function sauvegarderProduits(nouveau) {
  try {
   localStorage.setItem(
-   cle, JSON.stringify(nouveauCatalogue)
+   cleProduits, JSON.stringify(nouveau)
   );
-  catalogue = nouveauCatalogue;
+  catalogue = nouveau;
   afficher();
   return true;
- } catch (erreur) {
-  alert("Impossible de sauvegarder.");
+ } catch (e) {
+  alert("Sauvegarde impossible.");
   return false;
  }
 }
@@ -211,125 +249,278 @@ document.getElementById("formProduit")
  );
 
  if (!nom || !Number.isFinite(prix)
-     || prix <= 0
-     || !Number.isSafeInteger(stock)
-     || stock < 0) {
-  alert("Vérifiez les informations.");
+  || prix <= 0
+  || !Number.isSafeInteger(stock)
+  || stock < 0) {
+  alert("Informations invalides.");
   return;
  }
 
  const produit = {
   id: Date.now() + "-" +
    Math.random().toString(36).slice(2),
-  nom: nom,
-  prix: prix,
-  stock: stock
+  nom, prix, stock
  };
 
- if (sauvegarder([...catalogue, produit])) {
-  this.reset();
- }
+ if (sauvegarderProduits(
+  [...catalogue, produit]
+ )) this.reset();
 });
 
 function modifier(id) {
  const p = catalogue.find(
-  produit => String(produit.id) === String(id)
+  x => String(x.id) === String(id)
  );
  if (!p) return;
 
- const nouveauNom = prompt(
+ const saisieNom = prompt(
   "Nom du produit :", p.nom
  );
- if (nouveauNom === null) return;
+ if (saisieNom === null) return;
+ const nom = saisieNom.trim();
 
- const nom = nouveauNom.trim();
  if (!nom || nom.length > 100) {
   alert("Nom invalide.");
   return;
  }
 
- const nouveauPrix = prompt(
-  "Nouveau prix :", p.prix
+ const saisiePrix = prompt(
+  "Prix du produit :", p.prix
  );
- if (nouveauPrix === null) return;
+ if (saisiePrix === null) return;
+ const prix = Number(saisiePrix);
 
- const prix = Number(nouveauPrix);
- if (!nouveauPrix.trim()
-     || !Number.isFinite(prix)
-     || prix <= 0) {
+ if (!saisiePrix.trim()
+  || !Number.isFinite(prix)
+  || prix <= 0) {
   alert("Prix invalide.");
   return;
  }
 
- const nouveauStock = prompt(
-  "Nouvelle quantité :", p.stock
+ const saisieStock = prompt(
+  "Quantité en stock :", p.stock
  );
- if (nouveauStock === null) return;
+ if (saisieStock === null) return;
+ const stock = Number(saisieStock);
 
- const stock = Number(nouveauStock);
- if (!nouveauStock.trim()
-     || !Number.isSafeInteger(stock)
-     || stock < 0) {
-  alert("Quantité invalide.");
+ if (!saisieStock.trim()
+  || !Number.isSafeInteger(stock)
+  || stock < 0) {
+  alert("Stock invalide.");
   return;
  }
 
- const nouveauCatalogue = catalogue.map(
-  produit => String(produit.id) === String(id)
-   ? {...produit, nom, prix, stock}
-   : produit
+ const nouveau = catalogue.map(
+  x => String(x.id) === String(id)
+   ? {...x, nom, prix, stock} : x
  );
-
- sauvegarder(nouveauCatalogue);
+ sauvegarderProduits(nouveau);
 }
 
 function changerStock(id, variation) {
  const p = catalogue.find(
-  produit => String(produit.id) === String(id)
+  x => String(x.id) === String(id)
  );
  if (!p) return;
 
  const stock = Number(p.stock) + variation;
  if (!Number.isSafeInteger(stock)
-     || stock < 0) {
-  alert("Quantité insuffisante ou invalide.");
+  || stock < 0) {
+  alert("Stock insuffisant.");
   return;
  }
 
- const nouveauCatalogue = catalogue.map(
-  produit => String(produit.id) === String(id)
-   ? {...produit, stock}
-   : produit
- );
- sauvegarder(nouveauCatalogue);
+ sauvegarderProduits(catalogue.map(
+  x => String(x.id) === String(id)
+   ? {...x, stock} : x
+ ));
 }
 
 function supprimer(id) {
  if (!confirm("Supprimer ce produit ?"))
   return;
 
- sauvegarder(catalogue.filter(
-  p => String(p.id) !== String(id)
+ sauvegarderProduits(catalogue.filter(
+  x => String(x.id) !== String(id)
  ));
 }
 
-function afficher() {
- const liste = document.getElementById("liste");
- const recherche = document.getElementById(
-  "recherche"
- ).value.trim().toLowerCase();
+document.getElementById("formVente")
+ .addEventListener("submit", function(e) {
+ e.preventDefault();
 
+ const id = document.getElementById(
+  "produitVente"
+ ).value;
+ const quantite = Number(
+  document.getElementById(
+   "quantiteVente"
+  ).value
+ );
+
+ const p = catalogue.find(
+  x => String(x.id) === id
+ );
+
+ if (!p || !Number.isSafeInteger(quantite)
+  || quantite <= 0) {
+  alert("Vente invalide.");
+  return;
+ }
+
+ if (!Number.isSafeInteger(Number(p.stock))
+  || Number(p.stock) < quantite) {
+  alert("Stock insuffisant !");
+  return;
+ }
+
+ const prix = Number(p.prix);
+ const total = Math.round(
+  prix * quantite * 100
+ ) / 100;
+
+ if (!Number.isFinite(total)
+  || !Number.isSafeInteger(
+   Math.round(total * 100)
+  )) {
+  alert("Montant invalide.");
+  return;
+ }
+
+ const vente = {
+  id: Date.now() + "-" +
+   Math.random().toString(36).slice(2),
+  produit: p.nom,
+  quantite,
+  prix,
+  total,
+  date: new Date().toISOString()
+ };
+
+ const nouveauCatalogue = catalogue.map(
+  x => String(x.id) === id
+   ? {...x, stock: Number(x.stock) - quantite}
+   : x
+ );
+ const nouvellesVentes = [...ventes, vente];
+
+ // Enregistrer les deux données avec
+ // restauration en cas d'échec.
+ const ancienneValeur =
+  localStorage.getItem(cleProduits);
+
+ try {
+  localStorage.setItem(
+   cleProduits,
+   JSON.stringify(nouveauCatalogue)
+  );
+  localStorage.setItem(
+   cleVentes,
+   JSON.stringify(nouvellesVentes)
+  );
+ } catch (erreur) {
+  try {
+   if (ancienneValeur === null) {
+    localStorage.removeItem(cleProduits);
+   } else {
+    localStorage.setItem(
+     cleProduits, ancienneValeur
+    );
+   }
+  } catch (e) {}
+  alert("Enregistrement de vente impossible.");
+  return;
+ }
+
+ catalogue = nouveauCatalogue;
+ ventes = nouvellesVentes;
+ afficher();
+ this.reset();
+ alert("Vente enregistrée !");
+});
+
+function creerBouton(texte, action, classe) {
+ const b = document.createElement("button");
+ b.textContent = texte;
+ if (classe) b.className = classe;
+ b.addEventListener("click", action);
+ return b;
+}
+
+function afficher() {
  document.getElementById(
-  "produits"
+  "nbProduits"
  ).textContent = catalogue.length;
 
- const faibles = catalogue.filter(
-  p => Number(p.stock) <= 5
- ).length;
+ document.getElementById(
+  "nbVentes"
+ ).textContent = ventes.length;
+
+ const totalCA = ventes.reduce(
+  (somme, v) => somme + Number(v.total), 0
+ );
+
+ document.getElementById(
+  "ca"
+ ).textContent = argent(totalCA);
 
  document.getElementById(
   "faibles"
- ).textContent = faibles;
+ ).textContent = catalogue.filter(
+  p => Number(p.stock) <= 5
+ ).length;
+
+ afficherSelect();
+ afficherProduits();
+ afficherVentes();
+}
+
+function afficherSelect() {
+ const select = document.getElementById(
+  "produitVente"
+ );
+ const precedent = select.value;
+ select.replaceChildren();
+
+ const disponibles = catalogue.filter(
+  p => Number(p.stock) > 0
+ );
+
+ disponibles.forEach(p => {
+  const option = document.createElement(
+   "option"
+  );
+  option.value = String(p.id);
+  option.textContent =
+   p.nom + " - Stock : " + p.stock;
+  select.appendChild(option);
+ });
+
+ if (disponibles.some(
+  p => String(p.id) === precedent
+ )) select.value = precedent;
+
+ if (disponibles.length === 0) {
+  const option = document.createElement(
+   "option"
+  );
+  option.textContent = "Aucun produit disponible";
+  option.value = "";
+  select.appendChild(option);
+ }
+
+ document.querySelector(
+  "#formVente button"
+ ).disabled = disponibles.length === 0;
+}
+
+function afficherProduits() {
+ const liste = document.getElementById(
+  "liste"
+ );
+ const recherche = document.getElementById(
+  "recherche"
+ ).value.trim().toLowerCase();
 
  liste.replaceChildren();
 
@@ -352,7 +543,7 @@ function afficher() {
 
   const details = document.createElement("p");
   details.textContent =
-   "Prix : " + p.prix +
+   "Prix : " + argent(p.prix) +
    " | Stock : " + p.stock;
 
   const statut = document.createElement("p");
@@ -367,35 +558,66 @@ function afficher() {
    statut.className = "ok";
   }
 
-  function bouton(texte, action, classe) {
-   const b = document.createElement("button");
-   b.textContent = texte;
-   if (classe) b.className = classe;
-   b.addEventListener("click", action);
-   return b;
-  }
-
   div.append(
-   titre,
-   details,
-   statut,
-   bouton("Modifier", () => modifier(p.id)),
-   bouton("+ Stock",
-    () => changerStock(p.id, 1)),
-   bouton("- Stock",
+   titre, details, statut,
+   creerBouton(
+    "Modifier", () => modifier(p.id)
+   ),
+   creerBouton(
+    "+ Stock", () => changerStock(p.id, 1)
+   ),
+   creerBouton(
+    "- Stock",
     () => changerStock(p.id, -1),
-    "secondary"),
-   bouton("Supprimer",
+    "secondary"
+   ),
+   creerBouton(
+    "Supprimer",
     () => supprimer(p.id),
-    "danger")
+    "danger"
+   )
   );
-
   liste.appendChild(div);
  });
 }
 
+function afficherVentes() {
+ const historique = document.getElementById(
+  "historique"
+ );
+ historique.replaceChildren();
+
+ if (ventes.length === 0) {
+  historique.textContent =
+   "Aucune vente enregistrée.";
+  return;
+ }
+
+ [...ventes].reverse().forEach(v => {
+  const div = document.createElement("div");
+  div.className = "item";
+
+  const titre = document.createElement("h3");
+  titre.textContent = v.produit;
+
+  const details = document.createElement("p");
+  details.textContent =
+   "Quantité : " + v.quantite +
+   " | Prix : " + argent(v.prix) +
+   " | Total : " + argent(v.total);
+
+  const date = document.createElement("small");
+  date.textContent = new Date(
+   v.date
+  ).toLocaleString("fr-FR");
+
+  div.append(titre, details, date);
+  historique.appendChild(div);
+ });
+}
+
 document.getElementById("recherche")
- .addEventListener("input", afficher);
+ .addEventListener("input", afficherProduits);
 
 afficher();
 </script>
