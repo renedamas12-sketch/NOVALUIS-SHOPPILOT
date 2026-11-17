@@ -282,6 +282,69 @@ let csv="\uFEFF"+rows.map(r=>r.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').
 download("ShopPilot-rapport-V6.csv",csv,"text/csv;charset=utf-8");
 }
 render();
+  
+function modifierPrixAchat(id){
+ const produits=get("produits");
+ const p=produits.find(x=>String(x.id)===String(id));
+ if(!p)return alert("Produit introuvable");
+
+ const saisie=prompt(
+  "Prix d'achat de "+p.nom+" en euros :",
+  p.achat===undefined?"":p.achat
+ );
+ if(saisie===null)return;
+
+ const valeur=saisie.trim().replace(",",".");
+ const achat=Number(valeur);
+
+ if(!valeur||!Number.isFinite(achat)||achat<0){
+  alert("Prix d'achat invalide");
+  return;
+ }
+
+ if(!confirm("Enregistrer le prix d'achat de "+achat+" € ?"))
+  return;
+
+ p.achat=achat;
+
+ try{
+  save("produits",produits);
+  render();
+  alert("Prix d'achat enregistré !");
+ }catch(e){
+  alert("Enregistrement impossible");
+ }
+}
+
+const ancienRender=render;
+render=function(){
+ ancienRender();
+
+ const produits=get("produits");
+ const zone=el("listeProduits");
+
+ const titre=document.createElement("h3");
+ titre.textContent="Modifier les prix d'achat";
+ zone.append(titre);
+
+ produits.forEach(p=>{
+  const ligne=document.createElement("div");
+  ligne.style.padding="10px 0";
+
+  const nom=document.createElement("p");
+  nom.textContent=p.nom+" — Achat : "+
+   (p.achat===undefined?"À saisir":money(p.achat));
+
+  const btn=document.createElement("button");
+  btn.textContent="Modifier le prix d'achat";
+  btn.onclick=()=>modifierPrixAchat(p.id);
+
+  ligne.append(nom,btn);
+  zone.append(ligne);
+ });
+};
+
+  
 </script>
 </body>
 </html>
