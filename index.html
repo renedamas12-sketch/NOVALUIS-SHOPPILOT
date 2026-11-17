@@ -1,1 +1,52 @@
 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShopPilot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef3fa;
+      padding: 30px 15px;
+      text-align: center;
+    }
+    .carte {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      max-width: 400px;
+      margin: auto;
+    }
+    input, button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      border-radius: 8px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="carte">
+    <h1>ShopPilot</h1>
+    <p>Votre logiciel de gestion de boutique</p>
+    <input id="boutique" placeholder="Nom de votre boutique">
+    <button onclick="continuer()">Continuer</button>
+    <h2 id="message"></h2>
+  </div>
+  <script>
+    function continuer() {
+      const nom = document.getElementById("boutique").value.trim();
+      document.getElementById("message").textContent =
+        nom ? "Bienvenue chez " + nom + " !" : "Entrez le nom de votre boutique.";
+    }
+  </script>
+</body>
+</html>
