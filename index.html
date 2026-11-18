@@ -41,11 +41,24 @@ const produits = get("produits") || [];
     Number(p.stock ?? p.quantite ?? 0) <= 5
   );
 
-  alert(
-    faibles.length
-      ? "Produits à vérifier : " + faibles.length
-      : "Aucun stock faible détecté"
-  );
+
+if (faibles.length === 0) {
+  alert("Aucun stock faible détecté");
+} else {
+  const message = faibles.map(p =>
+    p.nom + " : " + p.stock +
+    " unité(s) restante(s)"
+  ).join("\n");
+
+  alert("ALERTE STOCK FAIBLE\n\n" +
+    message +
+    "\n\nPensez à réapprovisionner !");
+}
+
+    
+      
+
+  
 }
 </script>
 
