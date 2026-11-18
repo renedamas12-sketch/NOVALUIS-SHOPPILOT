@@ -32,9 +32,10 @@ small{color:#667}
   
 <script>
 function verifierStockV7() {
-  const produits = JSON.parse(
-    localStorage.getItem("produits") || "[]"
-  );
+
+  
+const produits = get("produits") || [];
+
 
   const faibles = produits.filter(p =>
     Number(p.stock ?? p.quantite ?? 0) <= 5
@@ -379,7 +380,41 @@ download("ShopPilot-rapport-V6.csv",csv,"text/csv;charset=utf-8");
 }
 render();
   
-function modifierPrixAchat(id){
+
+function modifierStock(id) {
+
+const produits = get("produits");
+
+
+  const produit = produits.find(p => String(p.id) === String(id));
+  if (!produit) {
+    alert("Produit introuvable");
+    return;
+  }
+
+  const saisie = prompt("Nouvelle quantité en stock :", produit.stock);
+  if (saisie === null) return;
+
+  const quantite = Number(saisie);
+  if (!Number.isInteger(quantite) || quantite < 0) {
+    alert("Veuillez saisir une quantité valide");
+    return;
+  }
+
+  
+produit.stock = quantite;
+save("produits", produits);
+
+  
+  
+  alert("Stock modifié avec succès !");
+  location.reload();
+}
+
+
+function modifierPrixAchat(id) {
+
+  
  const produits=get("produits");
  const p=produits.find(x=>String(x.id)===String(id));
  if(!p)return alert("Produit introuvable");
@@ -596,6 +631,45 @@ function verifierStocksFaibles() {
   } else {
     alert(faibles.length +
       " produit(s) à vérifier dans le stock.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  const zone = document.getElementById("listeProduits");
+  if (!zone) return;
+
+  const bouton = document.createElement("button");
+  bouton.textContent = "Modifier le stock";
+  bouton.onclick = function() {
+    const produits = get("produits");
+    const nom = prompt("Nom exact du produit :");
+    if (nom === null) return;
+
+    const produit = produits.find(p =>
+      p.nom.toLowerCase() === nom.trim().toLowerCase()
+    );
+
+    if (!produit) {
+      alert("Produit introuvable");
+      return;
+    }
+
+    modifierStock(produit.id);
+  };
+
+  zone.insertAdjacentElement("afterend", bouton);
+});
+function verifierStocks() {
+  const produits = get("produits") || [];
+  const faibles = produits.filter(p =>
+    Number(p.stock) <= 5
+  );
+
+  if (faibles.length === 0) {
+    alert("Aucun stock faible détecté");
+  } else {
+    alert("Stock faible : " +
+      faibles.map(p => p.nom).join(", "));
   }
 }
 
