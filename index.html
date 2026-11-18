@@ -237,6 +237,13 @@ if (faibles.length === 0) {
        id="listeDepenses"></div>
 </section>
 
+<section class="panel">
+  <h2>Réapprovisionnement V8</h2>
+  <button onclick="reapprovisionnerStock()">
+    📦 Réapprovisionner
+  </button>
+</section>
+
 </main>
 <script>
 const keys={
@@ -684,6 +691,10 @@ function verifierStocks() {
     alert("Stock faible : " +
       faibles.map(p => p.nom).join(", "));
   }
+}
+
+function reapprovisionnerStock() {
+  alert("Réapprovisionnement V8 : nous allons ajouter des produits au stock.");
 }
 
 </script>
