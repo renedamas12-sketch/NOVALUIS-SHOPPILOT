@@ -698,11 +698,68 @@ function verifierStocks() {
     alert("Stock faible : " +
       faibles.map(p => p.nom).join(", "));
   }
-}
+
+  
+
 
 function reapprovisionnerStock() {
-  alert("Réapprovisionnement V8 : nous allons ajouter des produits au stock.");
+  const produits = get("produits");
+
+  if (!produits.length) {
+    alert("Aucun produit enregistré.");
+    return;
+  }
+
+  const liste = produits.map((p, i) =>
+    (i + 1) + ". " + p.nom
+  ).join("\n");
+
+  const choix = prompt(
+    "Numéro du produit :\n" + liste
+  );
+
+  if (choix === null) return;
+
+  const index = Number(choix) - 1;
+
+  if (!Number.isInteger(index) ||
+      index < 0 || index >= produits.length) {
+    alert("Produit invalide.");
+    return;
+  }
+
+  const produit = produits[index];
+  const saisie = prompt(
+    "Quantité à ajouter pour " + produit.nom
+  );
+
+  if (saisie === null) return;
+
+  const quantite = Number(saisie);
+
+  if (!Number.isInteger(quantite) || quantite <= 0) {
+    alert("Quantité invalide.");
+    return;
+  }
+
+  const ancienStock = Number(produit.stock || 0);
+  produit.stock = ancienStock + quantite;
+
+  save(keys.produits, produits);
+
+  alert(
+    "Réapprovisionnement réussi !\n" +
+    produit.nom + "\n" +
+    "Ancien stock : " + ancienStock + "\n" +
+    "Ajout : " + quantite + "\n" +
+    "Nouveau stock : " + produit.stock
+  );
+
+  if (typeof render === "function") render();
 }
+
+
+
 
 </script>
 </body>
