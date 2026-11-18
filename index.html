@@ -648,7 +648,7 @@ render();
   
 
 function verifierStocksFaibles() {
-  const produits = get("produits", []);
+  const produits = get(keys.produits);
   const faibles = produits.filter(p =>
     Number(p.stock ?? p.quantite ?? 0) <= 5
   );
@@ -687,7 +687,7 @@ document.addEventListener("DOMContentLoaded", function() {
   zone.insertAdjacentElement("afterend", bouton);
 });
 function verifierStocks() {
-  const produits = get("produits") || [];
+  const produits = get(keys.produits) || [];
   const faibles = produits.filter(p =>
     Number(p.stock) <= 5
   );
