@@ -702,11 +702,10 @@ function verifierStocks() {
   
 }
 
-
-
 function reapprovisionnerStock() {
-  const produits = get("produits");
-
+  
+  
+const produits = get(keys.produits);
   if (!produits.length) {
     alert("Aucun produit enregistré.");
     return;
