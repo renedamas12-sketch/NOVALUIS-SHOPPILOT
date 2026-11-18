@@ -84,6 +84,11 @@ if (faibles.length === 0) {
 
 <button onclick="verifierStockV7()">Vérifier les stocks</button>
 
+<button onclick="show('reapprovisionnement')">
+  📦 Réapprovisionner V8
+</button>
+
+  
 </nav>
 
 
@@ -237,7 +242,9 @@ if (faibles.length === 0) {
        id="listeDepenses"></div>
 </section>
 
-<section class="panel">
+
+<section id="reapprovisionnement" class="panel">
+
   <h2>Réapprovisionnement V8</h2>
   <button onclick="reapprovisionnerStock()">
     📦 Réapprovisionner
