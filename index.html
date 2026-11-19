@@ -689,7 +689,7 @@ document.addEventListener("DOMContentLoaded", function() {
   zone.insertAdjacentElement("afterend", bouton);
 });
 function verifierStocks() {
-  const produits = get(keys.produits) || [];
+  const produits = get("produits") || [];
   const faibles = produits.filter(p =>
     Number(p.stock) <= 5
   );
@@ -707,7 +707,7 @@ function verifierStocks() {
 function reapprovisionnerStock() {
   
   
-const produits = get(keys.produits);
+const produits = get("produits");
   if (!produits.length) {
     alert("Aucun produit enregistré.");
     return;
