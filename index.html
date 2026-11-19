@@ -767,6 +767,67 @@ const produits = get("produits");
 
 
 
+/* SHOPPILOT V9 - GESTION DES DEPENSES */
+
+keys.depenses = "shoppilot_depenses_v1";
+
+function ajouterDepense() {
+  const description = el("descriptionDepense").value.trim();
+  const categorie = el("categorieDepense").value;
+  const montant = Number(el("montantDepense").value);
+  const date = el("dateDepense").value;
+
+  if (!description || !Number.isFinite(montant) ||
+      montant <= 0 || !date) {
+    alert("Veuillez remplir correctement les champs.");
+    return;
+  }
+
+  const depenses = get("depenses");
+
+  depenses.push({
+    id: uid(),
+    description,
+    categorie,
+    montant,
+    date
+  });
+
+  save("depenses", depenses);
+
+  el("descriptionDepense").value = "";
+  el("montantDepense").value = "";
+
+  afficherDepenses();
+  alert("Dépense enregistrée !");
+}
+
+function afficherDepenses() {
+  const zone = el("listeDepenses");
+  if (!zone) return;
+
+  const depenses = get("depenses");
+
+  zone.innerHTML = table(
+    ["Date", "Description", "Catégorie", "Montant"],
+    depenses.map(d => [
+      esc(d.date),
+      esc(d.description),
+      esc(d.categorie),
+      money(d.montant)
+    ])
+  );
+}
+
+const renderAvantDepenses = render;
+
+render = function() {
+  renderAvantDepenses();
+  afficherDepenses();
+};
+
+render();
+
 
 </script>
 </body>
