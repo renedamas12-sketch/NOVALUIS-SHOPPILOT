@@ -48,7 +48,8 @@ if (faibles.length === 0) {
   alert("Aucun stock faible détecté");
 } else {
   const message = faibles.map(p =>
-    p.nom + " : " + p.stock +
+    
+p.nom + " : " + (p.stock ?? p.quantite ?? 0) +
     " unité(s) restante(s)"
   ).join("\n");
 
