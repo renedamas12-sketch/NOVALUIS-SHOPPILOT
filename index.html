@@ -749,7 +749,7 @@ const produits = get("produits");
   const ancienStock = Number(produit.stock || 0);
   produit.stock = ancienStock + quantite;
 
-  save(keys.produits, produits);
+  save("produits", produits);
 
   alert(
     "Réapprovisionnement réussi !\n" +
