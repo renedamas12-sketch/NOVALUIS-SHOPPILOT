@@ -839,6 +839,31 @@ const boutonV10 = document.createElement("button");
 boutonV10.textContent = "Créer un compte V10";
 boutonV10.onclick = afficherCompteV10;
 document.querySelector("nav").appendChild(boutonV10);
+  function formulaireConnexionV10() {
+  const zone = document.createElement("div");
+  zone.className = "panel";
+  zone.innerHTML = `
+    <h2>Compte commerçant</h2>
+    <form id="formV10">
+      <label>Adresse e-mail</label>
+      <input type="email" required>
+      <label>Mot de passe</label>
+      <input type="password" required minlength="8">
+      <button type="submit">Continuer</button>
+    </form>
+    <p>Mode démonstration : aucun compte créé.</p>
+  `;
+  document.querySelector("main").prepend(zone);
+  zone.querySelector("form").onsubmit = function(e) {
+    e.preventDefault();
+    alert("Formulaire validé. Connexion non activée.");
+    this.reset();
+  };
+}
+const connexionV10 = document.createElement("button");
+connexionV10.textContent = "Connexion V10";
+connexionV10.onclick = formulaireConnexionV10;
+document.querySelector("nav").appendChild(connexionV10);
 </script>
 </body>
 </html>
