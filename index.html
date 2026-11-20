@@ -865,5 +865,12 @@ connexionV10.textContent = "Connexion V10";
 connexionV10.onclick = formulaireConnexionV10;
 document.querySelector("nav").appendChild(connexionV10);
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const shopPilotSupabase = window.supabase.createClient(
+    "https://nquqlrdqiibcvflmzoiv.supabase.co",
+    "sb_publishable_ovlXOGeQ5Umej6DwRPT7mQ_qeklV1nb"
+  );
+</script>
 </body>
 </html>
