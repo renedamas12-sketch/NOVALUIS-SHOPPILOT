@@ -828,49 +828,164 @@ render = function() {
 
 render();
 
-function afficherCompteV10() {
-  const nom = prompt("Nom du commerçant :");
-  if (!nom) return;
-  const boutique = prompt("Nom de la boutique :");
-  if (!boutique) return;
-  alert("Bienvenue " + nom + " ! Boutique : " + boutique);
-}
-const boutonV10 = document.createElement("button");
-boutonV10.textContent = "Créer un compte V10";
-boutonV10.onclick = afficherCompteV10;
-document.querySelector("nav").appendChild(boutonV10);
-  function formulaireConnexionV10() {
-  const zone = document.createElement("div");
-  zone.className = "panel";
-  zone.innerHTML = `
-    <h2>Compte commerçant</h2>
-    <form id="formV10">
-      <label>Adresse e-mail</label>
-      <input type="email" required>
-      <label>Mot de passe</label>
-      <input type="password" required minlength="8">
-      <button type="submit">Continuer</button>
-    </form>
-    <p>Mode démonstration : aucun compte créé.</p>
-  `;
-  document.querySelector("main").prepend(zone);
-  zone.querySelector("form").onsubmit = function(e) {
-    e.preventDefault();
-    alert("Formulaire validé. Connexion non activée.");
-    this.reset();
-  };
-}
-const connexionV10 = document.createElement("button");
-connexionV10.textContent = "Connexion V10";
-connexionV10.onclick = formulaireConnexionV10;
-document.querySelector("nav").appendChild(connexionV10);
+
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  const shopPilotSupabase = window.supabase.createClient(
+const authPanel = document.createElement("div");
+authPanel.className = "panel";
+authPanel.innerHTML = `
+  <h2 id="authTitle">Compte commerçant</h2>
+  <p id="authMessage" role="status"></p>
+  <form id="authForm">
+    <fieldset id="authFields">
+      <div id="authProfile">
+        <label for="merchantName">Nom du commerçant</label>
+        <input id="merchantName" autocomplete="name" required>
+        <label for="shopName">Nom de la boutique</label>
+        <input id="shopName" autocomplete="organization" required>
+      </div>
+      <label for="authEmail">Adresse e-mail</label>
+      <input id="authEmail" type="email" autocomplete="email" required>
+      <label for="authPassword">Mot de passe</label>
+      <input id="authPassword" type="password" required>
+      <button id="authSubmit" type="submit">Continuer</button>
+    </fieldset>
+  </form>
+  <button id="authLogout" type="button" hidden>Se déconnecter</button>
+`;
+authPanel.hidden = true;
+document.querySelector("main").prepend(authPanel);
+
+const authForm = el("authForm");
+const authFields = el("authFields");
+const authMessage = el("authMessage");
+const passwordInput = el("authPassword");
+const logoutButton = el("authLogout");
+const authButtons = [];
+let inscription = false;
+let utilisateur = null;
+
+function mettreAJourCompte() {
+  authForm.hidden = Boolean(utilisateur);
+  logoutButton.hidden = !utilisateur;
+  if (utilisateur) {
+    const boutique = utilisateur.user_metadata?.nom_boutique;
+    authMessage.textContent = "Connecté : " + utilisateur.email +
+      (boutique ? " — Boutique : " + boutique : "");
+  }
+}
+
+function ouvrirCompte(creer) {
+  inscription = creer;
+  authForm.reset();
+  el("authTitle").textContent = creer ? "Créer un compte" : "Connexion";
+  el("authProfile").hidden = !creer;
+  el("merchantName").disabled = !creer;
+  el("shopName").disabled = !creer;
+  passwordInput.minLength = creer ? 8 : 1;
+  passwordInput.autocomplete = creer ? "new-password" : "current-password";
+  el("authSubmit").textContent = creer ? "Créer mon compte" : "Me connecter";
+  authMessage.textContent = shopPilotSupabase
+    ? ""
+    : "Supabase est indisponible. Vérifiez Internet et rechargez la page.";
+  authPanel.hidden = false;
+  mettreAJourCompte();
+  authPanel.scrollIntoView({ block: "start" });
+}
+
+let shopPilotSupabase;
+try {
+  shopPilotSupabase = window.supabase.createClient(
     "https://nquqlrdqiibcvflmzoiv.supabase.co",
     "sb_publishable_ovlXOGeQ5Umej6DwRPT7mQ_qeklV1nb"
   );
+  shopPilotSupabase.auth.onAuthStateChange((_event, session) => {
+    const etaitConnecte = Boolean(utilisateur);
+    utilisateur = session?.user ?? null;
+    mettreAJourCompte();
+    if (etaitConnecte && !utilisateur) {
+      authMessage.textContent = "Vous êtes déconnecté.";
+    }
+  });
+} catch {
+  shopPilotSupabase = null;
+}
+
+for (const [texte, creer] of [
+  ["Créer un compte V10", true],
+  ["Connexion V10", false]
+]) {
+  const bouton = document.createElement("button");
+  bouton.type = "button";
+  bouton.textContent = texte;
+  bouton.onclick = () => ouvrirCompte(creer);
+  authButtons.push(bouton);
+  document.querySelector("nav").append(bouton);
+}
+
+authForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!shopPilotSupabase || utilisateur || authFields.disabled) return;
+
+  const email = el("authEmail").value.trim();
+  const password = passwordInput.value;
+  const nom = el("merchantName").value.trim();
+  const boutique = el("shopName").value.trim();
+
+  if (inscription && (!nom || !boutique)) {
+    authMessage.textContent = "Renseignez le nom du commerçant et de la boutique.";
+    return;
+  }
+
+  authFields.disabled = true;
+  authButtons.forEach(bouton => bouton.disabled = true);
+  authMessage.textContent = "Veuillez patienter…";
+
+  try {
+    const { data, error } = inscription
+      ? await shopPilotSupabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { nom_commercant: nom, nom_boutique: boutique }
+          }
+        })
+      : await shopPilotSupabase.auth.signInWithPassword({ email, password });
+
+    if (error) throw error;
+
+    authForm.reset();
+    if (data.session) {
+      utilisateur = data.session.user;
+      mettreAJourCompte();
+    } else {
+      authMessage.textContent =
+        "Vérifiez votre boîte e-mail et les indésirables. Si vous recevez un lien de confirmation, ouvrez-le, puis revenez dans ShopPilot et appuyez sur Connexion V10.";
+    }
+  } catch (error) {
+    authMessage.textContent = "Impossible de continuer. " +
+      (error.message || "Vérifiez votre connexion Internet.");
+  } finally {
+    passwordInput.value = "";
+    authFields.disabled = false;
+    authButtons.forEach(bouton => bouton.disabled = false);
+  }
+});
+
+logoutButton.onclick = async () => {
+  logoutButton.disabled = true;
+  try {
+    const { error } = await shopPilotSupabase.auth.signOut({ scope: "local" });
+    if (error) throw error;
+    ouvrirCompte(false);
+    authMessage.textContent = "Vous êtes déconnecté.";
+  } catch (error) {
+    authMessage.textContent = "Déconnexion impossible. " + error.message;
+  } finally {
+    logoutButton.disabled = false;
+  }
+};
 </script>
 </body>
 </html>
