@@ -828,7 +828,17 @@ render = function() {
 
 render();
 
-
+function afficherCompteV10() {
+  const nom = prompt("Nom du commerçant :");
+  if (!nom) return;
+  const boutique = prompt("Nom de la boutique :");
+  if (!boutique) return;
+  alert("Bienvenue " + nom + " ! Boutique : " + boutique);
+}
+const boutonV10 = document.createElement("button");
+boutonV10.textContent = "Créer un compte V10";
+boutonV10.onclick = afficherCompteV10;
+document.querySelector("nav").appendChild(boutonV10);
 </script>
 </body>
 </html>
