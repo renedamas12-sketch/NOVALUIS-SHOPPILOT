@@ -933,7 +933,28 @@ try {
   shopPilotSupabase.auth.onAuthStateChange((_event, session) => {
     const etaitConnecte = Boolean(utilisateur);
     utilisateur = session?.user ?? null;
-    mettreAJourCompte();
+    mettreAJourCompte();if (utilisateur) {
+  setTimeout(async () => {
+    const { data, error } = await shopPilotSupabase
+      .from("produits")
+      .select("id, nom, prix, achat, stock");
+
+    if (error) {
+      alert("Chargement des produits impossible : " + error.message);
+      return;
+    }
+
+    save("produits", (data || []).map(p => ({
+      id: p.id,
+      nom: p.nom,
+      prix: Number(p.prix),
+      achat: Number(p.achat),
+      stock: Number(p.stock)
+    })));
+    render();
+  }, 0);
+}
+    
     if (etaitConnecte && !utilisateur) {
       authMessage.textContent = "Vous êtes déconnecté.";
     }
