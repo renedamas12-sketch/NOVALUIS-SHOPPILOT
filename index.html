@@ -439,7 +439,7 @@ render();alert("Restauration terminée !");
 function exportCSV(){
 let rows=[["Date","Client","Produit","Quantité","Total","Paiement"],...get("ventes").map(v=>[v.date,v.client,v.produit,v.quantite,v.total,v.paiement])];
 let csv="\uFEFF"+rows.map(r=>r.map(x=>'"'+String(x??"").replace(/"/g,'""')+'"').join(";")).join("\r\n");
-download("ShopPilot-rapport-V6.csv",csv,"text/csv;charset=utf-8");
+download("ShopPilot-rapport-V10.csv",csv,"text/csv;charset=utf-8");
 }
 render();
   
