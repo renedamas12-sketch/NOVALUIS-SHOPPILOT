@@ -444,12 +444,10 @@ download("ShopPilot-rapport-V10.csv",csv,"text/csv;charset=utf-8");
 render();
   
 
-function modifierStock(id) {
-
-const produits = get("produits");
-
-
+async function modifierStock(id) {
+  const produits = get("produits") || [];
   const produit = produits.find(p => String(p.id) === String(id));
+
   if (!produit) {
     alert("Produit introuvable");
     return;
@@ -464,14 +462,31 @@ const produits = get("produits");
     return;
   }
 
-  
-produit.stock = quantite;
-save("produits", produits);
+  if (!shopPilotSupabase) {
+    alert("Supabase est indisponible");
+    return;
+  }
 
-  
-  
-  alert("Stock modifié avec succès !");
-  location.reload();
+  const { data, error } = await shopPilotSupabase
+    .from("produits")
+    .update({ stock: quantite })
+    .eq("id", String(id))
+    .select("id");
+
+  if (error) {
+    alert("Erreur Supabase : " + error.message);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    alert("Aucun produit modifié dans Supabase");
+    return;
+  }
+
+  produit.stock = quantite;
+  save("produits", produits);
+  render();
+  alert("Stock modifié et enregistré !");
 }
 
 
