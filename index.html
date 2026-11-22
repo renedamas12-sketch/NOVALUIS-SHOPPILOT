@@ -282,13 +282,43 @@ function table(headers,rows){
 return "<table><tr>"+headers.map(x=>"<th>"+x+"</th>").join("")+"</tr>"+
 rows.map(r=>"<tr>"+r.map(x=>"<td>"+x+"</td>").join("")+"</tr>").join("")+"</table>";
 }
-function ajouterProduit(){
-let nom=el("nomProduit").value.trim(),prix=+el("prix").value,achat=+el("achat").value,stock=+el("stock").value;
-if(!nom||prix<0||achat<0||!Number.isInteger(stock)||stock<0||!el("prix").value||!el("stock").value){alert("Vérifiez les informations");return}
-let p=get("produits");
-p.push({id:uid(),nom,prix,achat,stock});
-save("produits",p);render();alert("Produit ajouté");
+async function ajouterProduit(){
+  let nom=el("nomProduit").value.trim(),
+      prix=+el("prix").value,
+      achat=+el("achat").value,
+      stock=+el("stock").value;
+
+  if(!nom||prix<0||achat<0||!Number.isInteger(stock)||stock<0||!el("prix").value||!el("stock").value){
+    alert("Vérifiez les informations");
+    return;
+  }
+
+  if(!shopPilotSupabase){
+    alert("Supabase est indisponible");
+    return;
+  }
+
+  const {data:{user},error:userError}=await shopPilotSupabase.auth.getUser();
+  if(userError||!user){
+    alert("Connectez-vous avant d'ajouter un produit");
+    return;
+  }
+
+  const produit={id:String(uid()),user_id:user.id,nom,prix,achat,stock};
+  const {error}=await shopPilotSupabase.from("produits").insert(produit);
+
+  if(error){
+    alert("Erreur Supabase : "+error.message);
+    return;
+  }
+
+  let p=get("produits");
+  p.push({id:produit.id,nom,prix,achat,stock});
+  save("produits",p);
+  render();
+  alert("Produit ajouté et enregistré");
 }
+  
 function ajouterClient(){
 let nom=el("nomClient").value.trim();
 if(!nom){alert("Indiquez le nom");return}
