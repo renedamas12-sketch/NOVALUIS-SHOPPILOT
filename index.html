@@ -269,7 +269,39 @@ const get=k=>{
 try{return JSON.parse(localStorage.getItem(keys[k])||"[]")||[]}
 catch{return []}
 };
-const save=(k,v)=>localStorage.setItem(keys[k],JSON.stringify(v));
+const localSave=(k,v)=>{
+  if(!keys[k])return;
+  localStorage.setItem(keys[k],JSON.stringify(v));
+};
+const cloudSaveQueues={};
+const save=(k,v)=>{
+  localSave(k,v);
+  if(!keys[k]||!shopPilotSupabase||!utilisateur)return Promise.resolve();
+  const userId=utilisateur.id;
+  const snapshot=JSON.parse(JSON.stringify(v));
+  cloudSaveQueues[k]=(cloudSaveQueues[k]||Promise.resolve())
+    .catch(()=>{})
+    .then(async()=>{
+      const {error}=await shopPilotSupabase.from("shoppilot_donnees").upsert({
+        user_id:userId,
+        categorie:k,
+        donnees:snapshot,
+        updated_at:new Date().toISOString()
+      },{onConflict:"user_id,categorie"});
+      const status=el("authMessage");
+      let dirty=[];
+      try{dirty=JSON.parse(localStorage.getItem("shoppilot_dirty_buckets")||"[]");}catch{}
+      if(error){
+        console.error("ShopPilot cloud save failed:",error);
+        if(!dirty.includes(k))dirty.push(k);
+        localStorage.setItem("shoppilot_dirty_buckets",JSON.stringify(dirty));
+        if(status)status.textContent="Données gardées sur cet appareil, mais sauvegarde cloud échouée : "+error.message;
+      }else{
+        localStorage.setItem("shoppilot_dirty_buckets",JSON.stringify(dirty.filter(x=>x!==k)));
+      }
+    });
+  return cloudSaveQueues[k];
+};
 const uid=()=>Date.now()+"-"+Math.random().toString(36).slice(2);
 const money=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(Number(n)||0);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -304,17 +336,10 @@ async function ajouterProduit(){
     return;
   }
 
-  const produit={id:String(uid()),user_id:user.id,nom,prix,achat,stock};
-  const {error}=await shopPilotSupabase.from("produits").insert(produit);
-
-  if(error){
-    alert("Erreur Supabase : "+error.message);
-    return;
-  }
-
+  const produit={id:String(uid()),nom,prix,achat,stock};
   let p=get("produits");
-  p.push({id:produit.id,nom,prix,achat,stock});
-  save("produits",p);
+  p.push(produit);
+  await save("produits",p);
   render();
   alert("Produit ajouté et enregistré");
 }
@@ -433,6 +458,11 @@ if(!k.startsWith("shoppilot_"))return;
 if(val===null)localStorage.removeItem(k);
 else localStorage.setItem(k,typeof val==="string"?val:JSON.stringify(val));
 });
+if(utilisateur){
+for(const categorie of Object.keys(keys)){
+await save(categorie,get(categorie));
+}
+}
 render();alert("Restauration terminée !");
 }catch(e){alert("Fichier de sauvegarde invalide");}
 }
@@ -467,24 +497,8 @@ async function modifierStock(id) {
     return;
   }
 
-  const { data, error } = await shopPilotSupabase
-    .from("produits")
-    .update({ stock: quantite })
-    .eq("id", String(id))
-    .select("id");
-
-  if (error) {
-    alert("Erreur Supabase : " + error.message);
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    alert("Aucun produit modifié dans Supabase");
-    return;
-  }
-
   produit.stock = quantite;
-  save("produits", produits);
+  await save("produits", produits);
   render();
   alert("Stock modifié et enregistré !");
 }
@@ -939,6 +953,89 @@ function ouvrirCompte(creer) {
   authPanel.scrollIntoView({ block: "start" });
 }
 
+async function synchroniserDonneesCloud(user){
+  const status=el("authMessage");
+  try{
+    const ownerKey="shoppilot_owner_id";
+    const ancienUtilisateur=localStorage.getItem(ownerKey);
+    if(ancienUtilisateur&&ancienUtilisateur!==user.id){
+      Object.keys(keys).forEach(k=>localStorage.removeItem(keys[k]));
+      localStorage.removeItem("shoppilot_dirty_buckets");
+    }
+    localStorage.setItem(ownerKey,user.id);
+
+    const {data,error}=await shopPilotSupabase
+      .from("shoppilot_donnees")
+      .select("categorie, donnees")
+      .eq("user_id",user.id);
+    if(error)throw error;
+
+    const lignesCloud=new Map((data||[]).map(x=>[x.categorie,x.donnees]));
+    let categoriesEnAttente=[];
+    try{categoriesEnAttente=JSON.parse(localStorage.getItem("shoppilot_dirty_buckets")||"[]");}catch{}
+    for(const categorie of Object.keys(keys)){
+      if(categoriesEnAttente.includes(categorie)){
+        const valeurLocale=get(categorie);
+        const {error:uploadError}=await shopPilotSupabase
+          .from("shoppilot_donnees")
+          .upsert({
+            user_id:user.id,
+            categorie,
+            donnees:valeurLocale,
+            updated_at:new Date().toISOString()
+          },{onConflict:"user_id,categorie"});
+        if(uploadError)throw uploadError;
+        categoriesEnAttente=categoriesEnAttente.filter(x=>x!==categorie);
+        localStorage.setItem("shoppilot_dirty_buckets",JSON.stringify(categoriesEnAttente));
+        continue;
+      }
+      if(lignesCloud.has(categorie)){
+        const valeur=lignesCloud.get(categorie);
+        if(!Array.isArray(valeur))throw new Error("Données cloud invalides pour "+categorie);
+        localSave(categorie,valeur);
+        continue;
+      }
+
+      let valeurLocale=get(categorie);
+      if(categorie==="produits"&&valeurLocale.length===0){
+        try{
+          const ancien=await shopPilotSupabase.from("produits")
+            .select("id, nom, prix, achat, stock")
+            .eq("user_id",user.id);
+          if(!ancien.error&&Array.isArray(ancien.data)&&ancien.data.length){
+            valeurLocale=ancien.data.map(p=>({
+              id:p.id,
+              nom:p.nom,
+              prix:Number(p.prix),
+              ...(p.achat===null||p.achat===undefined?{}:{achat:Number(p.achat)}),
+              stock:Number(p.stock)
+            }));
+          }
+        }catch(_){/* L'ancienne table produits peut ne pas exister. */}
+      }
+
+      localSave(categorie,valeurLocale);
+      if(valeurLocale.length){
+        const {error:uploadError}=await shopPilotSupabase
+          .from("shoppilot_donnees")
+          .upsert({
+            user_id:user.id,
+            categorie,
+            donnees:valeurLocale,
+            updated_at:new Date().toISOString()
+          },{onConflict:"user_id,categorie"});
+        if(uploadError)throw uploadError;
+      }
+    }
+
+    render();
+    if(status)status.textContent="Connecté : "+user.email+" — données synchronisées.";
+  }catch(error){
+    console.error("ShopPilot cloud sync failed:",error);
+    if(status)status.textContent="Connecté, mais synchronisation impossible : "+(error.message||"vérifiez la table shoppilot_donnees");
+  }
+}
+
 let shopPilotSupabase;
 try {
   shopPilotSupabase = window.supabase.createClient(
@@ -948,27 +1045,11 @@ try {
   shopPilotSupabase.auth.onAuthStateChange((_event, session) => {
     const etaitConnecte = Boolean(utilisateur);
     utilisateur = session?.user ?? null;
-    mettreAJourCompte();if (utilisateur) {
-  setTimeout(async () => {
-    const { data, error } = await shopPilotSupabase
-      .from("produits")
-      .select("id, nom, prix, achat, stock");
-
-    if (error) {
-      alert("Chargement des produits impossible : " + error.message);
-      return;
+    mettreAJourCompte();
+    if(utilisateur){
+      const userPourSync=utilisateur;
+      setTimeout(()=>synchroniserDonneesCloud(userPourSync),0);
     }
-
-    save("produits", (data || []).map(p => ({
-      id: p.id,
-      nom: p.nom,
-      prix: Number(p.prix),
-      achat: Number(p.achat),
-      stock: Number(p.stock)
-    })));
-    render();
-  }, 0);
-}
     
     if (etaitConnecte && !utilisateur) {
       authMessage.textContent = "Vous êtes déconnecté.";
